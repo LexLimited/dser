@@ -1,0 +1,10 @@
+{
+    "name": "lex",
+    "age": 123,
+    "other attributes": {
+        "attribute 1": [00000, 111111, 22222],
+        "attribute 2": [10, [  11,      nil, 12], 13]
+    },
+    null, true, fal
+    se
+}

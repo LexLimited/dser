@@ -1,0 +1,14 @@
+[
+{
+  "directory": "/home/lex/projects/dser",
+  "command": "/usr/bin/c++  -I/home/lex/projects/dser/include  -o CMakeFiles/dser.dir/src/json_parser.cpp.o -c /home/lex/projects/dser/src/json_parser.cpp",
+  "file": "/home/lex/projects/dser/src/json_parser.cpp",
+  "output": "CMakeFiles/dser.dir/src/json_parser.cpp.o"
+},
+{
+  "directory": "/home/lex/projects/dser",
+  "command": "/usr/bin/c++  -I/home/lex/projects/dser/include  -o CMakeFiles/dser.dir/src/main.cpp.o -c /home/lex/projects/dser/src/main.cpp",
+  "file": "/home/lex/projects/dser/src/main.cpp",
+  "output": "CMakeFiles/dser.dir/src/main.cpp.o"
+}
+]
