@@ -1,1 +1,5 @@
 build
+.cache
+run.sh
+update_clang_config.sh
+compile_commands.json
