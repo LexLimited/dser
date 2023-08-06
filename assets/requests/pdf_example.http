@@ -1,0 +1,2 @@
+GET /course/ana021/AAchap6.pdf HTTP/1.1
+Dummy-Header: Lex Text Request

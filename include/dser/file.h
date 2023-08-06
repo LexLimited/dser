@@ -1,3 +1,6 @@
+#ifndef __DSER_FILE_H__
+#define __DSER_FILE_H__
+
 #include <fstream>
 #include <sys/mman.h>
 #include <sys/stat.h>
@@ -24,3 +27,6 @@ class file {
 };
 
 } // namespace dser::fs
+
+#endif // __DSER_FILE_H__
+

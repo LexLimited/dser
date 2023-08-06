@@ -1,3 +1,5 @@
+#include <asm-generic/socket.h>
+#include <cerrno>
 #include <cstdio>
 #include <dser/socket.h>
 
@@ -41,5 +43,17 @@ int dser::bind_inet_socket(const char* domain, const char* port) {
 
     // print_addrinfo(ai);
     return 0;
+}
+
+int dser::socket::set_timeout(int t) {
+    this->_timeout = t;
+    int tm_usecs = 1000 * t;
+    struct timeval tv { .tv_sec = tm_usecs / 1'000'000, .tv_usec = tm_usecs % 1'000'000 };
+
+    int err;
+    err = setsockopt(this->_fd, SOL_SOCKET, SO_RCVTIMEO, &tv, sizeof(tv));
+    if (err) return errno;
+    err = setsockopt(this->_fd, SOL_SOCKET, SO_SNDTIMEO, &tv, sizeof(tv));
+    return err ? errno : 0;
 }
 

@@ -18,18 +18,18 @@ namespace dser::fs {
 
     int file::open(const char* path) {
         this->_stream = std::fopen(path, "r");
-        if (!this->_stream) return -1;
+        if (!this->_stream) return errno;
 
         this->_fd = fileno(this->_stream);
         if (!this->_fd) {
             std::fclose(this->_stream);
-            return -1;
+            return errno;
         }
 
         struct stat f_stat;
         if(fstat(this->_fd, &f_stat)) {
             std::fclose(this->_stream);
-            return -1;
+            return errno;
         }
     
         this->_size = f_stat.st_size;
@@ -38,7 +38,7 @@ namespace dser::fs {
                 PROT_READ, MAP_PRIVATE,
                 this->_fd, 0);
         std::fclose(this->_stream);
-        if (!this->_data) return -1;
+        if (!this->_data) return errno;
         return 0;
     }
 

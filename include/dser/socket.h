@@ -13,6 +13,15 @@ namespace dser {
             virtual int listen() = 0;
             virtual int connect(const char* node, const char* servicef) = 0;
             virtual int accept() = 0;
+    
+            inline int fd() const noexcept { return this->_fd; }
+            
+            // set timeout in milliseocnds
+            int set_timeout(int t);
+
+        protected:
+            int _fd = 0;
+            int _timeout = 0; // snd / rcv timeout in milliseocnds
     };
 
 }

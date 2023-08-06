@@ -2,18 +2,20 @@
 #define __DSER_INET_SOCKET_H__
 
 #include "socket.h"
+
+#include <netdb.h>
 #include <sys/socket.h>
 
 namespace dser {
 
-    class inet_socket : ::dser::socket {
+    class inet_socket : public ::dser::socket {
         public:
             inet_socket(int family = AF_INET);
             ~inet_socket();
   
             inline int family() const noexcept { return this->_family; }
-            int fd() const noexcept;
 
+            int get_address_info(const char* node, const char* service, ::addrinfo **ai) const;
             int open() override;
             int close() override;
             int bind(const char* port);
@@ -23,7 +25,6 @@ namespace dser {
 
         private:
             int _family;
-            int _fd;
     };
 
 }
