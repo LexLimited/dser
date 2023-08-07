@@ -7,7 +7,7 @@ namespace dser {
 
     class http_parser {
         public:
-            int parse_http_string(std::string& str);    
+            int parse_http_string(std::string& str, http::http& h);    
     
         private:
     };

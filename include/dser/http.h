@@ -6,45 +6,54 @@
 
 namespace dser::http {
 
-    enum http_protocol {
+    enum class http_protocol {
         HTTP,
-        HTTPS
+        HTTPS,
+        INVALID
     };
 
-    enum http_protocol_version {
+    enum class http_protocol_version {
         V_1_0,
         V_1_1,
-        V_2_0
+        V_2_0,
+        INVALID
     };
 
-    enum http_method {
+    enum class http_method {
         GET,
         PUT,
         POST,
         DELETE,
-        UPDATE
+        UPDATE,
+        INVALID
     };
 
-    constexpr const char* http_protocol_to_str(http_protocol p) {
-        if (p == http_protocol::HTTP) return "HTTP";
-        if (p == http_protocol::HTTPS) return "HTTPS";
-        return nullptr;
+    constexpr std::string_view http_protocol_to_str(http_protocol p) {
+        switch (p) {
+            case http_protocol::HTTP: return "HTTP";
+            case http_protocol::HTTPS: return "HTTPS";
+            default: return {};
+        }
     }
 
-    constexpr const char* http_protocol_version_to_str(http_protocol_version pv) {
-        if (pv == http_protocol_version::V_1_0) return "1.0";
-        if (pv == http_protocol_version::V_1_1) return "1.1";
-        if (pv == http_protocol_version::V_2_0) return "2.0";
-        return nullptr;
+    constexpr std::string_view http_protocol_version_to_str(http_protocol_version pv) {
+        switch (pv) {
+            case http_protocol_version::V_1_0: return "1.0";
+            case http_protocol_version::V_1_1: return "1.1";
+            case http_protocol_version::V_2_0: return "2.0";
+            default: return {};
+        }
     }
 
-    constexpr const char* http_method_to_string(http_method m) {
-        if (m == http_method::GET) return "GET";
-        if (m == http_method::PUT) return "PUT";
-        if (m == http_method::POST) return "POST";
-        if (m == http_method::DELETE) return "DELETE";
-        if (m == http_method::UPDATE) return "UPDATE";
-        return nullptr;
+    constexpr std::string_view http_method_to_string(http_method m) {
+        switch (m) {
+            case http_method::GET: return "GET";
+            case http_method::PUT: return "PUT";
+            case http_method::POST: return "POST";
+            case http_method::DELETE: return "DELETE";
+            case http_method::UPDATE: return "UPDATE";
+            default: return {};
+        }
     }
 
     class http {
@@ -57,21 +66,26 @@ namespace dser::http {
             int read_from_file(const char* path);
             std::string stringify() const;
 
-            inline void set_status_code(int code) { this->_status_code = code; }
-            inline void set_status(std::string status) { this->_status = status; }
-            inline void set_body(const std::string& body) { this->_body = body; }
-            
-            void set_header(const std::string& key, const std::string& value);
-            void remove_header(const std::string& key);
+            void set_status_code(int code) { this->_status_code = code; }
+            void set_status(std::string_view status) { this->_status = status; }
+            void set_body(const std::string_view body) { this->_body = body; }
+            void set_protocol(http_protocol p) noexcept { this->_protocol = p; }
+            void set_protocol_vertsion(http_protocol_version pv) noexcept { this->_protocol_version = pv; }
+            void set_method(http_method method) noexcept { this->_method = method; }
+            void set_url(std::string_view url) noexcept { this->_url = url; }
 
-            inline const std::string& status() const noexcept { return this->_status; }
-            inline int status_code() const noexcept { return this->_status_code; }
-            inline http_protocol protocol() const noexcept { return this->_protocol; }
-            inline http_protocol_version protocol_version() const noexcept { return this->_protocol_version; }
-            inline std::string url() { return this->_url; }
-            inline http_method method() { return this->_method; }
-            inline const std::string& body() const noexcept { return this->_body; }
-            inline const Headers& headers() const noexcept { return this->_headers; }
+            void set_header(const std::string_view key, const std::string_view value);
+            void remove_header(const std::string_view key);
+
+            const std::string& status() const noexcept { return this->_status; }
+            int status_code() const noexcept { return this->_status_code; }
+            http_protocol protocol() const noexcept { return this->_protocol; }
+            http_protocol_version protocol_version() const noexcept { return this->_protocol_version; }
+            std::string url() { return this->_url; }
+            http_method method() { return this->_method; }
+            const std::string& body() const noexcept { return this->_body; }
+            const Headers& headers() const noexcept { return this->_headers; }
+            const std::string header(std::string_view key) const;
 
         private:
             int _status_code = 404;

@@ -51,8 +51,8 @@ int dser::socket::set_timeout(int t) {
     struct timeval tv { .tv_sec = tm_usecs / 1'000'000, .tv_usec = tm_usecs % 1'000'000 };
 
     int err;
-    err = setsockopt(this->_fd, SOL_SOCKET, SO_RCVTIMEO, &tv, sizeof(tv));
-    if (err) return errno;
+    // err = setsockopt(this->_fd, SOL_SOCKET, SO_RCVTIMEO, &tv, sizeof(tv));
+    // if (err) return errno;
     err = setsockopt(this->_fd, SOL_SOCKET, SO_SNDTIMEO, &tv, sizeof(tv));
     return err ? errno : 0;
 }
