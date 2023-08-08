@@ -40,40 +40,50 @@
 
 dser::http::http create_websocket_handshake_response(dser::http::http& req) {
     dser::http::http h;
+
     h.set_status_code(101);
     h.set_status("Switching Protocols");
 
     h.set_header("Upgrade", "websocket");
     h.set_header("Connection", "Upgrade");
+    
+    std::cout << "SEC-WEBSOCKET-Key" << std::endl;
+    std::cout << req.header("Sec-WebSocket-Key") << std::endl;
+
+    h.set_header("Sec-WebSocket-Key", req.header("Sec-WebSocket-Key"));
+
+    std::cout << "REQUEST HEADERS" << std::endl;
+
+    for (const auto& [key, value] : h.headers()) {
+        std::cout << key << ", " << value << std::endl;
+    }
+
+    std::cout << "=================================" << std::endl;
 
     gnutls_hash_hd_t handle = nullptr;
     gnutls_digest_algorithm_t sha1 = gnutls_digest_algorithm_t::GNUTLS_DIG_SHA1;
     
     assert(!gnutls_hash_init(&handle, sha1));
-    std::string sec = req.header("Sec-WebSocket-Accept") + "258EAFA5-E914-47DA-95CA-C5AB0DC85B11";
+    std::string sec = req.header("Sec-WebSocket-Key") + "258EAFA5-E914-47DA-95CA-C5AB0DC85B11";
     assert(!gnutls_hash(handle, sec.data(), sec.size()));
 
-    std::string digest {20};
+    std::string digest;
+    digest.resize(20);
     gnutls_hash_output(handle, digest.data());
 
-    gnutls_datum_t encode_input { (unsigned char*)digest.data(), 20 };
-    gnutls_datum_t encode_output;
-
-    assert(gnutls_hex_encode2(&encode_input, &encode_output) == GNUTLS_E_SUCCESS);
-
-    const unsigned char *base64_input = (const unsigned char*)encode_output.data;
-    // unsigned char* base64_output = new unsigned char[4 * (encode_output.size / 3 + (bool)encode_output.size)];
+    const unsigned char *base64_input = (const unsigned char*)digest.data();
     std::string base64_output;
-    base64_output.resize(4 * (encode_output.size / 3 + (bool)(encode_output.size % 3)));
-    EVP_EncodeBlock((unsigned char*)base64_output.data(), base64_input, (int)encode_output.size);    
+    base64_output.resize(4 * (digest.size() / 3 + bool(digest.size() % 3)));
+    EVP_EncodeBlock((unsigned char*)base64_output.data(), base64_input, digest.size());    
     h.set_header("Sec-WebSocket-Accept", base64_output);
-    
+   
+    std::cout << "Response http:" << std::endl;
+    std::cout << h.stringify() << std::endl;
+
     return h;
 }
 
 int handle_connection(int fd) {
-    printf("Connection handler\n");
-
     std::string buf;
     buf.resize(1024);
     ssize_t read_status = ::recv(fd, buf.data(), buf.size(), 0);
@@ -88,32 +98,44 @@ int handle_connection(int fd) {
         return 0;
     }
 
-    dser::http_parser parser;
-    dser::http::http h;
-    int err = parser.parse_http_string(buf, h);
-    if (err) {
-        printf("Error parsing http: %d\n", err);
+    dser::http::http_parser parser;
+    dser::http::http req;
+    auto err = parser.parse_http_string(buf, req);
+    if (err != dser::http::http_parser::http_parser_error::NO_ERROR) {
+        std::cout << "error parsing http: " << dser::http::http_parser::strerror(err) << std::endl;
+        return -1;
     }
 
-    std::cout << dser::http::http_method_to_string(h.method()) << std::endl;
-    std::cout << dser::http::http_protocol_to_str(h.protocol()) << std::endl;
-    std::cout << dser::http::http_protocol_version_to_str(h.protocol_version()) << std::endl;
-    std::cout << h.body() << std::endl;
-
-    decltype(auto) headers = h.headers();
+    printf("\n-----------------------------------\nReceived data:\n%.*s\n------------------------------------\n",
+            (int)buf.size(), buf.c_str());
+    printf("\n-----------------------------------\nParsed request:\n%s\n--------------------------------------------\n",
+            req.stringify().c_str());
+    printf("\n-----------------------------------\nRequest headers:\n");
     
-    for (auto&& [key, value] : headers) {
-        std::cout << key << ", " << value << std::endl;
+    for (const auto& [key, value] : req.headers()) {
+        printf("%s:%s\n", key.c_str(), value.c_str());
     }
 
-    printf("Received data:\n%.*s", (int)buf.size(), buf.c_str());
-
-    dser::http::http res = create_websocket_handshake_response(h);
+    dser::http::http res = create_websocket_handshake_response(req);
     std::string res_str = res.stringify();
     ssize_t send_status = ::send(fd, res_str.data(), res_str.size(), 0);
     dser::assert_perr(send_status > 0 && "Failed to send a response");
 
-    printf("Response sent:\n%s", res.stringify().c_str());
+    while (1) {
+        read_status = ::recv(fd, buf.data(), buf.size(), 0);
+        if (read_status < 0) {
+            printf("Error reading from connection\n");
+            return read_status;
+        } else if (!read_status) {
+            printf("Connection was shut closed\n");
+            return 0;
+        } else {
+            std::cout << "Received data from connectio" << std::endl;
+            std::cout << std::string_view( buf.data(), read_status ) << std::endl;
+        }
+
+        dser::sleep_ms(16);
+    }
 
     return read_status;
 }
@@ -173,7 +195,18 @@ void display_startup_message() {
 }
 
 int main() {
-    display_startup_message();
+    /*
+
+    EXAMPLE FROM SPECS:
+
+    std::string key = "dGhlIHNhbXBsZSBub25jZQ==";
+    std::string guid = "258EAFA5-E914-47DA-95CA-C5AB0DC85B11";
+   
+    -> s3pPLMBiTxaQ9kYGzzhZRbK+xOo=
+
+    */
+
+    // display_startup_message();
 
     // dser::examples::google_request();
     // dser::examples::pdf_request();

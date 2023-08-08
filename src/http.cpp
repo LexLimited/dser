@@ -1,3 +1,4 @@
+#include "dser/utils.h"
 #include <dser/file.h>
 #include <dser/http.h>
 #include <format>

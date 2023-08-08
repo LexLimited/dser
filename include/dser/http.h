@@ -1,10 +1,29 @@
 #ifndef __DSER_HTTP_H__
 #define __DSER_HTTP_H__
 
+#include "dser/utils.h"
 #include <string>
 #include <unordered_map>
 
 namespace dser::http {
+
+    struct http_header_hash {
+        /*
+        size_t operator()(const std::string &sv) {
+            return std::hash<std::string>{}(dser::to_lower_case(sv));
+        }
+        */
+
+        size_t operator()(const std::string &sv) const {
+            return std::hash<std::string>{}(dser::to_lower_case(sv));
+        }
+    };
+
+    struct http_header_equal_to {
+        bool operator()(const std::string& lhs, const std::string& rhs) const {
+            return dser::to_lower_case(lhs) == dser::to_lower_case(rhs);
+        }
+    };
 
     enum class http_protocol {
         HTTP,
@@ -58,7 +77,7 @@ namespace dser::http {
 
     class http {
         public:
-            typedef std::unordered_map<std::string, std::string> Headers; 
+            typedef std::unordered_map<std::string, std::string, http_header_hash, http_header_equal_to> Headers; 
 
             http();
             ~http();
