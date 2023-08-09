@@ -2,15 +2,23 @@
 #define __DSER_EXCEPTION_H__
 
 #include <exception>
+#include <source_location>
+#include <string>
+#include <format>
+
 namespace dser {
     
     class exception : public std::exception {
         public:
-            exception(const char* msg): _what(msg) {};
-            inline const char* what() _GLIBCXX_TXN_SAFE_DYN _GLIBCXX_NOTHROW { return this->_what; }
+            exception(std::string w, std::source_location loca = std::source_location::current())
+                :   _what(std::format("file: {}({}:{}) in function: {}: {}",
+                            loca.file_name(), loca.line(), loca.column(), loca.function_name(), w))
+            {}
+
+        virtual const char* what() const noexcept override { return this->_what.c_str(); }
 
         private:
-            const char* _what;
+            std::string _what;
     };
 }
 

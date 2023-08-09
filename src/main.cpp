@@ -19,22 +19,23 @@
 #include <sys/socket.h>
 #include <poll.h>
 
-#include "dser/http_parser.h"
-#include "dser/utils.h"
 #include "omp.h"
 
+#include <dser/http_parser.h>
+#include <dser/utils.h>
 #include <dser/assert.h>
 #include <dser/json_parser.h>
 #include <dser/file.h>
 #include <dser/socket.h>
 #include <dser/inet_socket.h>
 #include <dser/http.h>
+#include <dser/examples.h>
+#include <dser/examples.h>
+#include <dser/websocket.h>
+
 #include <openssl/evp.h>
 #include <openssl/sha.h>
 #include <gnutls/crypto.h>
-
-#include <dser/examples.h>
-#include <dser/examples.h>
 
 #include <ranges>
 
@@ -121,6 +122,30 @@ int handle_connection(int fd) {
     ssize_t send_status = ::send(fd, res_str.data(), res_str.size(), 0);
     dser::assert_perr(send_status > 0 && "Failed to send a response");
 
+    dser::websocket::websocket ws { req, fd };
+
+    try {
+        ws.read();
+
+        for (uint8_t i = 0; i < ws.frame().payload_length; ++i) {
+            if (i && (i % 8 == 0)) std::cout << std::endl;
+            std::cout << (int)ws.frame().payload[i] << "\t";
+        }
+
+        std::cout << "Read from websocket" << std::endl;
+        std::cout << "Final: " << (unsigned)ws.frame().final << std::endl;
+        std::cout << "RSV1: " << (unsigned)ws.frame().rsv1 << std::endl;
+        std::cout << "RSV2: " << (unsigned)ws.frame().rsv2 << std::endl;
+        std::cout << "RSV3: " << (unsigned)ws.frame().rsv3 << std::endl;
+        std::cout << "Masked: " << (unsigned)ws.frame().masked << std::endl;
+        std::cout << "Mask: " << (unsigned)ws.frame().mask << std::endl;
+        std::cout << "Payload length: " << (unsigned)ws.frame().payload_length << std::endl;
+
+    } catch(const dser::socket_exception& e) {
+        std::cout << e.what() << std::endl;
+    }
+
+    /*
     while (1) {
         read_status = ::recv(fd, buf.data(), buf.size(), 0);
         if (read_status < 0) {
@@ -136,6 +161,7 @@ int handle_connection(int fd) {
 
         dser::sleep_ms(16);
     }
+    */
 
     return read_status;
 }
