@@ -30,7 +30,12 @@ void print_addrinfo(addrinfo* ai) {
 }
 
 int dser::open_inet6_socket(int family) {
-    return ::socket(family, SOCK_STREAM, 0);
+    int fd = ::socket(family, SOCK_STREAM, 0);
+    if (!fd) return 0;
+
+    int option = 1;
+    // ::setsockopt(fd, SOL_SOCKET, SO_REUSEADDR, &option, sizeof(option));
+    return fd;
 }
 
 int dser::bind_inet_socket(const char* domain, const char* port) {

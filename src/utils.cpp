@@ -1,8 +1,9 @@
 #include <algorithm>
 #include <cctype>
 #include <chrono>
-#include <dser/utils.h>
 #include <thread>
+
+#include <dser/utils.h>
 
 namespace dser {
 
@@ -100,5 +101,12 @@ namespace dser {
         return out;
     }
     
+    std::chrono::time_point<std::chrono::high_resolution_clock> clock_time() {
+        return std::chrono::high_resolution_clock::now();
+    }
+
+    long measure_time(std::chrono::time_point<std::chrono::high_resolution_clock> &last) {
+        return std::chrono::duration_cast<std::chrono::milliseconds>(clock_time() - last).count();
+    }
 }
 

@@ -10,7 +10,7 @@ include_directories(
 	"include"
 )
 
-set(CMAKE_CXX_FLAGS "-Wall -Wextra -Wpedantic -O0 -g -std=c++20 -fopenmp")
+set(CMAKE_CXX_FLAGS "-Wall -Wextra -Wpedantic -O3 -std=c++20 -fopenmp")
 
 find_package(OpenSSL)
 find_package(GnuTLS)
@@ -22,3 +22,4 @@ target_link_libraries(${TARGET}
     OpenSSL::Crypto
     GnuTLS::GnuTLS
 )
+
