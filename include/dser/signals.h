@@ -4,12 +4,14 @@
 #include <array>
 #include <csignal>
 
-namespace dser::signals {
+namespace dser::signals
+{
 
     inline constinit std::array handled_signals { SIGABRT, SIGFPE, SIGILL, SIGSEGV };
     // std::unordered_map<int, void(*)(int)> standard_signal_handlers;
 
-    extern "C" {
+    extern "C"
+    {
         void signal_handler(int);
     }
 

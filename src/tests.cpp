@@ -6,7 +6,8 @@
 
 // 2^26
 
-void bit_trick(std::vector<std::byte>& v1, std::vector<std::byte>& v2, uint32_t mask) {
+void bit_trick(std::vector<std::byte>& v1, std::vector<std::byte>& v2, uint32_t mask)
+{
     uint64_t mask64 = ((uint64_t)mask) << 32 | mask;
     // uint64_t* payload_ptr = (uint64_t*)v1.data();
     
@@ -14,7 +15,8 @@ void bit_trick(std::vector<std::byte>& v1, std::vector<std::byte>& v2, uint32_t 
     constexpr size_t local_out_size = 4096;
     uint64_t local_out[local_out_size];
     
-    for (size_t i = 0; i < v1.size() / (8 * local_out_size); ++i) {
+    for (size_t i = 0; i < v1.size() / (8 * local_out_size); ++i)
+    {
         // memcpy(local_in, (uint64_t*)v1.data() + i * 64, 64 * sizeof(uint64_t));
         
         uint64_t* payload_ptr = (uint64_t*)v1.data() + i * local_out_size;
@@ -33,7 +35,8 @@ void bit_trick(std::vector<std::byte>& v1, std::vector<std::byte>& v2, uint32_t 
     */
 }
 
-void range_trick(std::vector<std::byte>& v1, std::vector<std::byte>& v2, uint32_t mask) {
+void range_trick(std::vector<std::byte>& v1, std::vector<std::byte>& v2, uint32_t mask)
+{
     constexpr size_t local_out_size = 4096;
     uint64_t local_out[local_out_size];
 
@@ -44,7 +47,8 @@ void range_trick(std::vector<std::byte>& v1, std::vector<std::byte>& v2, uint32_
     auto span1 = std::span<uint64_t> { (uint64_t*)v1.data(), v1.size() / 8 };
     auto span2 = std::span<uint64_t> { (uint64_t*)v2.data(), v2.size() / 8 };
 
-    for (auto it = span1.begin(), it2 = span2.begin(); it < span1.end(); it += local_out_size, it2 += local_out_size) {
+    for (auto it = span1.begin(), it2 = span2.begin(); it < span1.end(); it += local_out_size, it2 += local_out_size)
+    {
         std::ranges::transform(
                 it, it + local_out_size, local_out,
                 transformation, {});

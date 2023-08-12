@@ -10,18 +10,21 @@
 
 using namespace dser::http;
 
-enum class http_message_type {
+enum class http_message_type
+{
     RESPONSE,
     REQUEST
 };
 
-http_protocol http_parser::parse_protocol(std::string_view sv) {
+http_protocol http_parser::parse_protocol(std::string_view sv)
+{
     if (sv.size() == 4 && sv.starts_with("HTTP")) return http_protocol::HTTP;
     if (sv.size() == 5 && sv.starts_with("HTTPS")) return http_protocol::HTTPS;
     return http_protocol::INVALID;
 }
 
-http_protocol_version http_parser::parse_protocol_version(std::string_view sv) {
+http_protocol_version http_parser::parse_protocol_version(std::string_view sv)
+{
     if (sv.size() != 3) return http_protocol_version::INVALID;
     if (sv.starts_with("1.0")) return http_protocol_version::V_1_0;
     if (sv.starts_with("1.1")) return http_protocol_version::V_1_1;
@@ -29,7 +32,8 @@ http_protocol_version http_parser::parse_protocol_version(std::string_view sv) {
     return http_protocol_version::INVALID;
 }
 
-http_method http_parser::parse_http_method(std::string_view sv) {
+http_method http_parser::parse_http_method(std::string_view sv)
+{
 #define DSER_TRY_METHOD(method) if (sv.starts_with(#method)) return http_method::method
     DSER_TRY_METHOD(GET);
     DSER_TRY_METHOD(PUT);
@@ -41,11 +45,13 @@ http_method http_parser::parse_http_method(std::string_view sv) {
 }
 
 template<std::ranges::range R>
-std::string_view string_view_from_range(const R& iter) {
+std::string_view string_view_from_range(const R& iter)
+{
     return std::string_view{ iter.begin(), iter.end() };
 }
 
-http_parser::http_parser_error http_parser::parse_protocol_and_version(std::string_view sv, http& h) {
+http_parser::http_parser_error http_parser::parse_protocol_and_version(std::string_view sv, http& h)
+{
     auto proto_split = sv | std::views::split('/');
     if (std::distance(proto_split.begin(), proto_split.end()) != 2) return http_parser_error::UNKNOWN;
 
@@ -63,7 +69,8 @@ http_parser::http_parser_error http_parser::parse_protocol_and_version(std::stri
     return http_parser_error::NO_ERROR;
 }
 
-http_parser::http_parser_error http_parser::parse_status_line(std::string_view str, http& http) {
+http_parser::http_parser_error http_parser::parse_status_line(std::string_view str, http& http)
+{
     auto split = str | std::views::split(' ');
     if (std::distance(split.begin(), split.end()) != 3) return http_parser_error::MALFORMED_STATUS_LINE;
 
@@ -71,16 +78,20 @@ http_parser::http_parser_error http_parser::parse_status_line(std::string_view s
     std::string_view token_view = std::string_view { (*token).begin(), (*token).end() };
     
     http_message_type type;
-    if (token_view.starts_with("HTTP")) {
+    if (token_view.starts_with("HTTP"))
+    {
         type = http_message_type::RESPONSE;
-    } else {
+    } else
+    {
         type = http_message_type::REQUEST;
     }
    
-    if (type == http_message_type::RESPONSE) {
+    if (type == http_message_type::RESPONSE)
+    {
         auto err = parse_protocol_and_version(token_view, http);
         return err;
-    } else {
+    } else
+    {
         auto method = parse_http_method(token_view);
         if (method == http_method::INVALID) return http_parser_error::INVALID_METHOD;
         http.set_method(method);
@@ -93,9 +104,11 @@ http_parser::http_parser_error http_parser::parse_status_line(std::string_view s
     ++token;
     token_view = string_view_from_range(*token);
 
-    if (type == http_message_type::REQUEST) {
+    if (type == http_message_type::REQUEST)
+    {
         parse_protocol_and_version(token_view, http);
-    } else {
+    } else
+    {
         auto method = parse_http_method(token_view);
         if (method == http_method::INVALID) return http_parser_error::INVALID_METHOD;
         http.set_method(method);
@@ -104,9 +117,11 @@ http_parser::http_parser_error http_parser::parse_status_line(std::string_view s
     return http_parser_error::NO_ERROR;
 }
 
-http_parser::http_parser_error http_parser::parse_headers(std::string_view str, http& http) {
+http_parser::http_parser_error http_parser::parse_headers(std::string_view str, http& http)
+{
     const auto lines = dser::split(str, "\r\n");
-    for (const auto& line : lines) {
+    for (const auto& line : lines)
+    {
         const auto parts = dser::split_first(line, ":");
         if (!parts.first.size()) return http_parser_error::EMPTY_HEADER_KEY;
         if (!parts.second.size()) return http_parser_error::EMPTY_HEADER_VALUE;
@@ -116,7 +131,8 @@ http_parser::http_parser_error http_parser::parse_headers(std::string_view str, 
     return http_parser_error::NO_ERROR;
 }
 
-http_parser::http_parser_error http_parser::parse_http_string(std::string& str, http& h) {
+http_parser::http_parser_error http_parser::parse_http_string(std::string& str, http& h)
+{
     http_parser_error err = http_parser_error::NO_ERROR;
 
     size_t end_of_status_line = str.find("\r\n");

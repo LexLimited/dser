@@ -6,9 +6,11 @@
 #include <string>
 #include <format>
 
-namespace dser {
+namespace dser
+{
     
-    class exception : public std::exception {
+    class exception : public std::exception
+    {
         public:
             exception(std::string w, std::source_location loca = std::source_location::current())
                 :   _what(std::format("file: {}({}:{}) in function: {}: {}",

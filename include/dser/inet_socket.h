@@ -6,9 +6,11 @@
 #include <netdb.h>
 #include <sys/socket.h>
 
-namespace dser {
+namespace dser
+{
 
-    class inet_socket : public ::dser::socket {
+    class inet_socket : public ::dser::socket
+    {
         public:
             inet_socket(int family = AF_INET);
             ~inet_socket();

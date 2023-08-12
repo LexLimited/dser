@@ -5,19 +5,22 @@
 
 using namespace dser;
 
-std::string crypto::sha1(std::string_view plain) {
+std::string crypto::sha1(std::string_view plain)
+{
     int err;
     std::string digest;
     digest.resize(20);
 
     gnutls_hash_hd_t handle = nullptr;
     err = gnutls_hash_init(&handle, gnutls_digest_algorithm_t::GNUTLS_DIG_SHA1);
-    if (err) {
+    if (err)
+    {
         return {};
     }
     
     err = gnutls_hash(handle, plain.data(), plain.size());
-    if (err) {
+    if (err)
+    {
         return {};
     }
 
@@ -25,7 +28,8 @@ std::string crypto::sha1(std::string_view plain) {
     return digest;
 }
 
-std::string crypto::base64_encode(std::string_view plain) {
+std::string crypto::base64_encode(std::string_view plain)
+{
     gnutls_datum_t result;
     gnutls_datum_t data;
     data.data = (unsigned char*)plain.data();

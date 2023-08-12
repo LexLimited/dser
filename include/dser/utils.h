@@ -5,7 +5,8 @@
 #include <vector>
 #include <chrono>
 
-namespace dser {
+namespace dser
+{
 
     void sleep_ms(long ms);
     std::string_view trim(const std::string& s);

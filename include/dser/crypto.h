@@ -3,7 +3,8 @@
 
 #include <string>
 
-namespace dser::crypto {
+namespace dser::crypto
+{
 
     std::string sha1(std::string_view);
     std::string base64_encode(std::string_view);

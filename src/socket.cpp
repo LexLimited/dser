@@ -8,11 +8,13 @@
 #include <netdb.h>
 #include <unistd.h>
 
-void print_sockaddr(sockaddr* sa) {
+void print_sockaddr(sockaddr* sa)
+{
     printf("data: %.*s, family: %d\n", sizeof(sa->sa_data), sa->sa_data, sa->sa_family);
 }
 
-void print_addrinfo(addrinfo* ai) {
+void print_addrinfo(addrinfo* ai)
+{
     printf("------------------------\n");
     printf("address info\n");
     printf("------------------------\n");
@@ -29,7 +31,8 @@ void print_addrinfo(addrinfo* ai) {
     printf("------------------------\n");
 }
 
-int dser::open_inet6_socket(int family) {
+int dser::open_inet6_socket(int family)
+{
     int fd = ::socket(family, SOCK_STREAM, 0);
     if (!fd) return 0;
 
@@ -38,7 +41,8 @@ int dser::open_inet6_socket(int family) {
     return fd;
 }
 
-int dser::bind_inet_socket(const char* domain, const char* port) {
+int dser::bind_inet_socket(const char* domain, const char* port)
+{
     addrinfo *ai;
     addrinfo ai_hints;
 
@@ -50,7 +54,8 @@ int dser::bind_inet_socket(const char* domain, const char* port) {
     return 0;
 }
 
-int dser::socket::set_timeout(int t) {
+int dser::socket::set_timeout(int t)
+{
     this->_timeout = t;
     int tm_usecs = 1000 * t;
     struct timeval tv { .tv_sec = tm_usecs / 1'000'000, .tv_usec = tm_usecs % 1'000'000 };

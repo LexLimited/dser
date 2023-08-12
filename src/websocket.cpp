@@ -10,6 +10,7 @@
 
 #include <dser/assert.h>
 #include <dser/websocket.h>
+#include <dser/algorithms.h>
 
 #include <iostream>
 #include <iterator>
@@ -21,7 +22,8 @@ using namespace dser::websocket;
 
 websocket::websocket() {}
 
-websocket::websocket(http::http& hs_request, int fd) {
+websocket::websocket(http::http& hs_request, int fd)
+{
     this->_fd = fd;
 }
 
@@ -35,14 +37,17 @@ struct first_bytes {
     uint8_t mask    : 1;
 };
 
-void print_bits(std::span<std::byte> bytes) {
-    for (const auto byte : bytes) {
+void print_bits(std::span<std::byte> bytes)
+{
+    for (const auto byte : bytes)
+    {
         std::cout << std::format("{:08b} ", (uint8_t)byte);
     }
     std::cout << std::endl;
 }
 
-int websocket::read_frame() {
+int websocket::read_frame()
+{
     static_assert(sizeof(first_bytes) == 2);
 
     std::byte buf[12];
@@ -69,24 +74,32 @@ int websocket::read_frame() {
     
     n_bytes_extended += this->_frame.masked ? 4 : 0;
     if (payload_length == 126)
+    {
         n_bytes_extended_len = 2;
-    else if (payload_length > 126)
+    } else if (payload_length > 126)
+    {
         n_bytes_extended_len = 4;
+    }
     n_bytes_extended += n_bytes_extended_len;
 
-    if (n_bytes_extended) {
+    if (n_bytes_extended)
+    {
         read_status = ::recv(this->_fd, buf, n_bytes_extended, MSG_WAITALL);
         if (read_status < 0) throw socket_exception{ errno };
         if (!read_status) return -1;
     }
     
     if (payload_length < 126)
+    {
         this->_frame.payload_length = payload_length;
-    else if (payload_length == 126)
+    } else if (payload_length == 126)
+    {
         this->_frame.payload_length = ntohs(reinterpret_cast<uint16_t*>(buf)[0]);
-    else if (payload_length > 126)
+    } else if (payload_length > 126)
+    {
         this->_frame.payload_length = be64toh(reinterpret_cast<uint64_t*>(buf)[0]);
-   
+    }
+
     this->_frame.mask = reinterpret_cast<uint32_t*>(buf + n_bytes_extended_len)[0];
     this->_frame.payload.resize(this->_frame.payload_length);
 
@@ -96,7 +109,10 @@ int websocket::read_frame() {
             this->_frame.payload.data(),
             this->_frame.payload_length,
             MSG_WAITALL);
-    if (read_status < 0) throw socket_exception{ errno };
+    if (read_status < 0)
+    {
+        throw socket_exception{ errno };
+    }
 
     return 0;
 }
@@ -106,58 +122,57 @@ int websocket::read() {
 
     int i = 0;
     int err;
-    while (should_continue_reading) {
+    while (should_continue_reading)
+    {
         err = this->read_frame();
-        if (err) {
+        if (err)
+        {
             std::cout << "Error reading frame" << std::endl;
             this->_message_read_successfully = 0;
             return -1;
         }
 
-        if (this->_frame.final) should_continue_reading = 0;
-        
-        std::cout << "Read frame N " << i++ << std::endl;
+        if (this->_frame.final)
+        {
+            should_continue_reading = 0;
+        }
+
+        std::cout << "\n\nRead frame N " << i++ << std::endl;
 
         std::cout << "Read from websocket" << std::endl;
         std::cout << "Final: " << (unsigned)this->_frame.final << std::endl;
         std::cout << "RSV1: " << (unsigned)this->_frame.rsv1 << std::endl;
         std::cout << "RSV2: " << (unsigned)this->_frame.rsv2 << std::endl;
         std::cout << "RSV3: " << (unsigned)this->_frame.rsv3 << std::endl;
-        std::cout << "Masked: " << std::endl;
+        std::cout << "Mask: " << std::endl;
         print_bits({ (std::byte*)&(this->_frame.mask), 4 });
-        std::cout << "Mask: " << this->_frame.mask << std::endl;
         std::cout << "Payload length: " << (unsigned)this->_frame.payload_length << std::endl;
 
-        std::vector<std::byte> unmasked;
+        dser::algorithms::apply_xormask(
+                &this->_frame.mask, this->_frame.payload.data(),
+                sizeof(uint32_t), this->_frame.payload_length);
+
+        std::cout << "Unmasked payload: " << std::endl;
+        for (std::byte byte : this->_frame.payload)
+        {
+            std::cout << (int)byte << std::endl;
+        }
+
+        for (std::byte byte : this->_frame.payload)
+        {
+            std::cout << (char)byte;
+        }
+        
+        std::cout << std::endl;
+
+        /*
         this->_frame.payload.resize(this->_frame.payload.size() + this->_frame.payload.size() % 4);
         unmasked.reserve(this->_frame.payload.size());
   
-        /*
-        for (size_t i = 0; i < unmasked.size(); ++i) {
-            unsigned char byte = 
-                ((unsigned char*)this->_frame.payload.data())[i] ^ 
-                ((unsigned char*)&this->_frame.mask)[i % 4];
-            unmasked[i] = (std::byte)byte;
-        }
-        */
-
         const auto transformation = [i = (size_t)0, this](std::byte c) mutable -> std::byte {
             unsigned char byte = (unsigned char)c ^ ((unsigned char*)&_frame.mask)[i % 4];
             return (std::byte)byte;
         };
-       
-        /*
-        std::ranges::transform(
-                this->_frame.payload,
-                std::back_inserter(unmasked),
-                transformation, {});
-        */
-
-        /*
-        std::ranges::transform(
-                std::
-                );
-        */
 
         uint32_t* payload_ptr = (uint32_t*)this->_frame.payload.data();
         for (size_t i = 0; i < this->_frame.payload.size() / 4; ++i) {
@@ -166,8 +181,8 @@ int websocket::read() {
 
         this->_frame.payload.resize(this->_frame.payload_length);
         unmasked.resize(this->_frame.payload_length);
-    
-        // for (const auto std::byte : )
+        */
+
     }
 
     return 0;

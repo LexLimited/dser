@@ -1,5 +1,6 @@
 build
 .cache
+db
 run.sh
 update_clang_config.sh
 compile_commands.json

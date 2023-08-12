@@ -5,7 +5,8 @@
 #include <cstdio>
 #include <cstdlib>
 
-namespace dser {
+namespace dser
+{
 
     void assert_perr(int success, const char* msg = nullptr);
 

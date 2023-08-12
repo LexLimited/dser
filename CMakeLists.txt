@@ -23,3 +23,6 @@ target_link_libraries(${TARGET}
     GnuTLS::GnuTLS
 )
 
+target_link_libraries(${TARGET}
+    /usr/lib/libpq.so
+)

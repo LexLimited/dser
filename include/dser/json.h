@@ -5,7 +5,8 @@
 #include <vector>
 #include <unordered_map>
 
-namespace dser {
+namespace dser
+{
 
     enum json_primitive_type {
         JSON_STRING,
@@ -21,7 +22,8 @@ namespace dser {
 
     class json_primitive {};
 
-    class json_value {
+    class json_value
+    {
         public:
             json_value_type get_type() const noexcept;
 
@@ -29,18 +31,18 @@ namespace dser {
             json_value_type _type;
     };
 
-    class json_object {
+    class json_object
+    {
         public:
-            const std::vector<object*>& get_children() const noexcept; 
+            // const std::vector<object*>& get_children() const noexcept; 
 
         private:
             std::unordered_map<std::string, json_value> properties;
     };
 
-    class json {
+    class json
+    {
         public:
-            
-
         private:
     };
 

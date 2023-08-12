@@ -7,9 +7,11 @@
 #include "inet_socket.h"
 #include "http.h"
 
-namespace dser::websocket {
+namespace dser::websocket
+{
 
-    struct ws_frame {
+    struct ws_frame
+    {
         uint64_t payload_length;
         uint_fast8_t masked;
         uint32_t mask;
@@ -20,7 +22,8 @@ namespace dser::websocket {
         std::vector<std::byte> payload;
     };
 
-    class websocket : public inet_socket {
+    class websocket : public inet_socket
+    {
         public:
             websocket();
             websocket(http::http& hs_request, int fd);

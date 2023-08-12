@@ -6,9 +6,11 @@
 #include <string>
 #include "exception.h"
 
-namespace dser {
+namespace dser
+{
 
-    class socket_exception : public ::dser::exception {
+    class socket_exception : public ::dser::exception
+    {
         public:
             socket_exception(int error_code, std::source_location loca = std::source_location::current()): exception(std::strerror(error_code), loca) {}
     };
@@ -16,7 +18,8 @@ namespace dser {
     int open_inet6_socket(int family);
     int bind_inet_socket(const char* domain, const char* port);
 
-    class socket {
+    class socket
+    {
         public:
             virtual int open() = 0;
             virtual int close() = 0;

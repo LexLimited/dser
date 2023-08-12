@@ -1,9 +1,11 @@
 #include <dser/signals.h>
 #include <iostream>
 
-namespace dser {
+namespace dser
+{
     
-    void signals::signal_handler(int sig) {
+    void signals::signal_handler(int sig)
+    {
         // ::close(3);    
         std::cout << "interrupt handler: sig - " << sig << std::endl;
 
@@ -11,11 +13,14 @@ namespace dser {
         std::raise(sig);
     }
 
-    void signals::handle_signals() {
+    void signals::handle_signals()
+    {
         void(*prev)(int);
-        for (int sig : handled_signals) {
+        for (int sig : handled_signals)
+        {
             prev = std::signal(sig, signal_handler);
-            if (prev == SIG_ERR) {
+            if (prev == SIG_ERR)
+            {
                 std::cout << "Failed to set signal handler for " << sig << std::endl;
             }
         }

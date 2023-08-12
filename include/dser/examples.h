@@ -15,8 +15,11 @@ statistatic_assert(
         "you might have included examples.h headers multiple times");
 #endif
 
-namespace dser::examples {
-    int pdf_request() {
+namespace dser::examples
+{
+
+    int pdf_request()
+    {
         printf("Youtube request test:\n");
 
         dser::inet_socket sock { AF_INET };
@@ -25,11 +28,13 @@ namespace dser::examples {
 
         const char* host = "ocw.nctu.edu.tw";
         const char* port = "80";
-        if (sock.connect(host, port)) {
+        if (sock.connect(host, port))
+        {
             printf("Failed to connect to %s:%s\n", host, port);
             printf("Reason: %s\n", strerror(errno));
             return errno;
-        } else {
+        } else
+        {
             printf("Connected succesfully\n");
         }
 
@@ -39,12 +44,14 @@ namespace dser::examples {
         ssize_t bytes_sent = ::send(sock.fd(), req_file.data(), req_file.size(), 0);    
         printf("%d bytes sent\n", (int)bytes_sent);
 
-        if (bytes_sent < 0) {
+        if (bytes_sent < 0)
+        {
             printf("Failed to send: %s\n", strerror(errno));
             return errno;
         }
 
-        if (!bytes_sent) {
+        if (!bytes_sent)
+        {
             printf("Connection was shut down\n");
             return errno;
         }
@@ -59,13 +66,16 @@ namespace dser::examples {
         do {
             recv_status = ::recv(sock.fd(), recv_buf, recv_buf_size, 0);
 
-            if (recv_status == 0) {
+            if (recv_status == 0)
+            {
                 printf("\nConnection was shut down\n");
             }
-            else if (recv_status < 0) {
+            else if (recv_status < 0)
+            {
                 printf("\nFailed to read: %s\n", strerror(errno));
             }
-            else {
+            else
+            {
                 printf("%s", std::string(recv_buf).c_str());         
                 received_message += std::string(recv_buf);
             }
@@ -79,7 +89,8 @@ namespace dser::examples {
         return 0;
     }
 
-    int google_request() {
+    int google_request()
+    {
         printf("Google request test:\n");
 
         dser::inet_socket sock { AF_INET };
@@ -88,11 +99,13 @@ namespace dser::examples {
 
         const char* google_name = "google.com";
         const char* google_port = "80";
-        if (sock.connect(google_name, google_port)) {
+        if (sock.connect(google_name, google_port))
+        {
             printf("Failed to connect to %s:%s\n", google_name, google_port);
             printf("Reason: %s\n", strerror(errno));
             return errno;
-        } else {
+        } else
+        {
             printf("Connected succesfully\n");
         }
 
@@ -102,12 +115,14 @@ namespace dser::examples {
         ssize_t bytes_sent = ::send(sock.fd(), req_file.data(), req_file.size(), 0);    
         printf("%d bytes sent\n", (int)bytes_sent);
 
-        if (bytes_sent < 0) {
+        if (bytes_sent < 0)
+        {
             printf("Failed to send: %s\n", strerror(errno));
             return errno;
         }
 
-        if (!bytes_sent) {
+        if (!bytes_sent)
+        {
             printf("Connection was shut down\n");
             return errno;
         }
@@ -119,16 +134,20 @@ namespace dser::examples {
 
         ssize_t recv_status = 0;
         int iterations = 0;
-        do {
+        do
+        {
             recv_status = ::recv(sock.fd(), recv_buf, recv_buf_size, 0);
 
-            if (recv_status == 0) {
+            if (recv_status == 0)
+            {
                 printf("\nConnection was shut down\n");
             }
-            else if (recv_status < 0) {
+            else if (recv_status < 0)
+            {
                 printf("\nFailed to read: %s\n", strerror(errno));
             }
-            else {
+            else
+            {
                 printf("%s", std::string(recv_buf).c_str());         
                 received_message += std::string(recv_buf);
             }

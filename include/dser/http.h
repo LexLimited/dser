@@ -5,22 +5,27 @@
 #include <string>
 #include <unordered_map>
 
-namespace dser::http {
+namespace dser::http
+{
 
-    struct http_header_hash {
+    struct http_header_hash
+    {
         /*
         size_t operator()(const std::string &sv) {
             return std::hash<std::string>{}(dser::to_lower_case(sv));
         }
         */
 
-        size_t operator()(const std::string &sv) const {
+        size_t operator()(const std::string &sv) const
+        {
             return std::hash<std::string>{}(dser::to_lower_case(sv));
         }
     };
 
-    struct http_header_equal_to {
-        bool operator()(const std::string& lhs, const std::string& rhs) const {
+    struct http_header_equal_to
+    {
+        bool operator()(const std::string& lhs, const std::string& rhs) const
+        {
             return dser::to_lower_case(lhs) == dser::to_lower_case(rhs);
         }
     };
@@ -47,16 +52,20 @@ namespace dser::http {
         INVALID
     };
 
-    constexpr std::string_view http_protocol_to_str(http_protocol p) {
-        switch (p) {
+    constexpr std::string_view http_protocol_to_str(http_protocol p)
+    {
+        switch (p)
+        {
             case http_protocol::HTTP: return "HTTP";
             case http_protocol::HTTPS: return "HTTPS";
             default: return {};
         }
     }
 
-    constexpr std::string_view http_protocol_version_to_str(http_protocol_version pv) {
-        switch (pv) {
+    constexpr std::string_view http_protocol_version_to_str(http_protocol_version pv)
+    {
+        switch (pv)
+        {
             case http_protocol_version::V_1_0: return "1.0";
             case http_protocol_version::V_1_1: return "1.1";
             case http_protocol_version::V_2_0: return "2.0";
@@ -64,8 +73,10 @@ namespace dser::http {
         }
     }
 
-    constexpr std::string_view http_method_to_string(http_method m) {
-        switch (m) {
+    constexpr std::string_view http_method_to_string(http_method m)
+    {
+        switch (m)
+        {
             case http_method::GET: return "GET";
             case http_method::PUT: return "PUT";
             case http_method::POST: return "POST";
@@ -75,7 +86,8 @@ namespace dser::http {
         }
     }
 
-    class http {
+    class http
+    {
         public:
             typedef std::unordered_map<std::string, std::string, http_header_hash, http_header_equal_to> Headers; 
 

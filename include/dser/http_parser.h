@@ -3,9 +3,11 @@
 
 #include "http.h"
 
-namespace dser::http {
+namespace dser::http
+{
 
-    class http_parser {
+    class http_parser
+    {
         public:
             enum class http_parser_error {
                 MALFORMED_HTTP,
@@ -21,8 +23,10 @@ namespace dser::http {
                 UNKNOWN
             };
 
-            static constexpr std::string_view strerror(http_parser_error e) {
-                switch (e) {
+            static constexpr std::string_view strerror(http_parser_error e)
+            {
+                switch (e)
+                {
                     case http_parser_error::MALFORMED_HTTP: return "Malformed http";
                     case http_parser_error::MALFORMED_STATUS_LINE: return "Malformed status line";
                     case http_parser_error::MALFORMED_HEADER: return "Malformed header";
