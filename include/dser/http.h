@@ -112,7 +112,7 @@ namespace dser::http
             int status_code() const noexcept { return this->_status_code; }
             http_protocol protocol() const noexcept { return this->_protocol; }
             http_protocol_version protocol_version() const noexcept { return this->_protocol_version; }
-            std::string url() { return this->_url; }
+            const std::string& url() const noexcept { return this->_url; }
             http_method method() { return this->_method; }
             const std::string& body() const noexcept { return this->_body; }
             const Headers& headers() const noexcept { return this->_headers; }

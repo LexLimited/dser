@@ -8,6 +8,13 @@
 
 namespace dser
 {
+// A -> B -> C
+// B : A
+// C : B
+// ((A*)&b)->foo() iz B
+// ((A*)&c)->foo() iz C
+// A::foo - virtual
+    
 
     class socket_exception : public ::dser::exception
     {
@@ -21,6 +28,8 @@ namespace dser
     class socket
     {
         public:
+            virtual ~socket() = default;
+
             virtual int open() = 0;
             virtual int close() = 0;
             virtual int listen() = 0;

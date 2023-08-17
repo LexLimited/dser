@@ -27,13 +27,14 @@ namespace dser::websocket
         public:
             websocket();
             websocket(http::http& hs_request, int fd);
-            int read_frame();
             int read();
-            const std::vector<std::byte>& message();
+            const std::vector<std::byte>& message() const noexcept { return this->_message; }
 
             const ws_frame& frame() const noexcept { return this->_frame; };
 
         private:
+            int read_frame();
+            
             ws_frame _frame;
             std::vector<std::byte> _message = {};
             int _message_read_successfully = 0;

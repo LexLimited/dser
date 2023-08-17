@@ -5,7 +5,9 @@
 #include <cstring>
 #include <gnutls/gnutls.h>
 #include <iostream>
+#include <libpq-fe.h>
 #include <limits>
+#include <memory>
 #include <netdb.h>
 #include <stdio.h>
 #include <string>
@@ -20,6 +22,7 @@
 #include <sys/socket.h>
 #include <poll.h>
 
+#include "dser/postgres.h"
 #include "omp.h"
 
 #include <dser/http_parser.h>
@@ -35,6 +38,10 @@
 #include <dser/websocket.h>
 #include <dser/signals.h>
 #include <dser/crypto.h>
+// #include <dser/postgres.h>
+#include <dser/postgres_command.h>
+#include <dser/server.h>
+#include <dser/router.h>
 
 #include <openssl/evp.h>
 #include <openssl/sha.h>
@@ -101,6 +108,11 @@ int handle_connection(int fd)
     try
     {
         ws.read();
+        std::cout << "read message of size " << ws.message().size() << ":" << std::endl;
+        for (std::byte byte : ws.message()) {
+            std::cout << (char)byte;
+        }
+        std::cout << std::endl;
     } catch(const dser::socket_exception& e)
     {
         std::cout << e.what() << std::endl;
@@ -139,26 +151,57 @@ void display_startup_message()
     printf("Application started\n");
 }
 
-#include <libpq-fe.h>
-
-PGconn* postgres_connect() {
-    PGconn* conn = PQconnectdb("postgres://lex@localhost:5432/lex");
-    if (!conn)return nullptr;
-
-    ConnStatusType status = PQstatus(conn);
-    if (status != CONNECTION_OK)
-    {
-        std::cout << "Connection error: " << PQerrorMessage(conn) << std::endl;
-        return nullptr;
-    }
-    return conn;
+auto postgres_create_tables(dser::postgres::app &app)
+{
+    std::string query = dser::postgres::read_query_from_file("create_tables.sql");
+    return dser::postgres::exec_cmd(app, query.c_str());
 }
 
 int main()
 {
-    PGconn* conn = postgres_connect();
-    if (!conn) return -1;
-    std::cout << "Connection OK" << std::endl;
+    dser::http::server server;
+    auto router = std::make_shared<dser::router>();
+
+    router->get("/chats", nullptr);
+    router->post("/non-chats", nullptr);
+    router->route("/routed_chats", [](dser::router &r) {
+        r.put("/pattern1", nullptr);
+    });
+
+    int err = server.serve("3000", router);
+    if (err) std::cout << "Error : " << err << std::endl;
+
+    return 0;
+
+    dser::postgres::app app;
+    if (!app.connection_ok()) {
+        std::cout << "Connection error" << std::endl;
+        std::cout << PQerrorMessage(app.conn()) << std::endl;
+        return -1;
+    }
+
+    auto res = postgres_create_tables(app);
+    auto status = PQresultStatus(res.result());
+    if (status != PGRES_COMMAND_OK)
+    {
+        std::cout << "status: " << status << std::endl;
+        std::cout << "Error creating tables:" << std::endl;
+        std::cout << PQresultErrorMessage(res.result()) << std::endl;
+    }
+
+    res = dser::postgres::exec_cmd(app, "SELECT * FROM users");
+    status = PQresultStatus(res.result());
+    if (status != PGRES_TUPLES_OK)
+    {
+        std::cout << "status: " << status << std::endl;
+        std::cout << "Error selecting from users:" << std::endl;
+        std::cout << PQresultErrorMessage(res.result()) << std::endl;
+    }  else
+    {
+        std::cout << "Result" << std::endl;
+        std::cout << "Number of tuples: " << PQntuples(res.result()) << std::endl;
+        // PQprint(stdout, res.result(), &opts);
+    }
 
     return 0;
 
