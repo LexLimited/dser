@@ -7,7 +7,8 @@
 
 namespace dser::http {
 
-    class server {
+    class server
+    {
         public:
             int serve(std::string_view port, const std::shared_ptr<dser::router> &r);
 

@@ -5,15 +5,19 @@
 #include <iostream>
 #include <libpq-fe.h>
 
-namespace dser::postgres {
+namespace dser::postgres
+{
 
-    class cmd_result {
+    class cmd_result
+    {
         public:
-            cmd_result(PGresult* result): _result(result) {
+            cmd_result(PGresult* result): _result(result)
+            {
                 std::cout << "result: " << result << std::endl;
             }
 
-            cmd_result(cmd_result&& other) {
+            cmd_result(cmd_result&& other)
+            {
                 this->_result = other._result;
                 other._result = nullptr;
             }
@@ -21,12 +25,16 @@ namespace dser::postgres {
             ~cmd_result() { this->free(); }
 
             const PGresult* result() const noexcept { return this->_result; }
-            void free() const {
+            
+            void free() const
+            {
                 if (this->_result) PQclear(this->_result);
             }
 
             cmd_result& operator=(const cmd_result& other) = delete;
-            cmd_result& operator=(cmd_result&& other) {
+            
+            cmd_result& operator=(cmd_result&& other)
+            {
                 this->_result = other._result;
                 other._result = nullptr;
                 return *this;

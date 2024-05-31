@@ -3,9 +3,11 @@
 
 #include "postgres.h"
 
-namespace dser::postgres {
+namespace dser::postgres
+{
 
-    class app {
+    class app
+    {
         public:
             app();
             ~app();

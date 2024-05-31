@@ -12,6 +12,7 @@
 #include <stdio.h>
 #include <string>
 #include <sys/poll.h>
+#include <thread>
 #include <unistd.h>
 #include <coroutine>
 #include <strings.h>
@@ -22,9 +23,17 @@
 #include <sys/socket.h>
 #include <poll.h>
 
-#include "dser/postgres.h"
+#include <openssl/evp.h>
+#include <openssl/sha.h>
+#include <gnutls/crypto.h>
+
+#include <ranges>
 #include "omp.h"
 
+#include <dser/exception.h>
+#include <dser/http_connection.h>
+#include <dser/postgres.h>
+#include <dser/postgres_app.h>
 #include <dser/http_parser.h>
 #include <dser/utils.h>
 #include <dser/assert.h>
@@ -42,12 +51,9 @@
 #include <dser/postgres_command.h>
 #include <dser/server.h>
 #include <dser/router.h>
-
-#include <openssl/evp.h>
-#include <openssl/sha.h>
-#include <gnutls/crypto.h>
-
-#include <ranges>
+#include <dser/pipe.h>
+#include <dser/log.h>
+#include <dser/path.h>
 
 dser::http::http create_websocket_handshake_response(dser::http::http& req)
 {
@@ -157,19 +163,85 @@ auto postgres_create_tables(dser::postgres::app &app)
     return dser::postgres::exec_cmd(app, query.c_str());
 }
 
+int test_postgres()
+{
+    dser::pipe p(dser::pipe::pipe_type::READ);
+    dser::pipe::result pipe_result;
+    pipe_result = p.exec_complete("pg_ctl -D db/data -l log.log");
+    if (pipe_result.error)
+    {
+        dser::log::debug("Failed to start pg server:", pipe_result.output);
+        return pipe_result.error;
+    }
+
+    dser::postgres::app app;
+    if (!app.connection_ok()) {
+        std::cout << "Connection error" << std::endl;
+        std::cout << PQerrorMessage(app.conn()) << std::endl;
+        return -1;
+    }
+
+    auto res = postgres_create_tables(app);
+    auto status = PQresultStatus(res.result());
+    if (status != PGRES_COMMAND_OK)
+    {
+        std::cout << "status: " << status << std::endl;
+        std::cout << "Error creating tables:" << std::endl;
+        std::cout << PQresultErrorMessage(res.result()) << std::endl;
+    }
+
+    res = dser::postgres::exec_cmd(app, "SELECT * FROM users");
+    status = PQresultStatus(res.result());
+    if (status != PGRES_TUPLES_OK)
+    {
+        std::cout << "status: " << status << std::endl;
+        std::cout << "Error selecting from users:" << std::endl;
+        std::cout << PQresultErrorMessage(res.result()) << std::endl;
+    }  else
+    {
+        std::cout << "Result" << std::endl;
+        std::cout << "Number of tuples: " << PQntuples(res.result()) << std::endl;
+        // PQprint(stdout, res.result(), &opts);
+    }
+
+    pipe_result = p.exec_complete("pg_ctl stop -D db/data");
+    if (pipe_result.error)
+    {
+        throw dser::exception("Failed to stop pg server");
+    }
+
+    return 0;
+}
+
+void pipe_test()
+{
+    dser::pipe read_pipe(dser::pipe::pipe_type::READ);
+    dser::pipe write_pipe(dser::pipe::pipe_type::WRITE);
+
+    read_pipe.exec("echo \"c\na\nb\"");
+    write_pipe.exec("sort");
+
+    int fds[] = { read_pipe.fd(), write_pipe.fd() };
+    int err = ::pipe(fds);
+    if (err)
+    {
+        dser::log::debug("Failed to pipe:", strerror(errno));
+    }
+
+    dser::log::debug("Succeeded with piping:",
+            read_pipe.read_to_string(),
+            write_pipe.read_to_string());
+}
+
 int main()
 {
-    dser::http::server server;
-    auto router = std::make_shared<dser::router>();
+    dser::path p("/a/b/*");
 
-    router->get("/chats", nullptr);
-    router->post("/non-chats", nullptr);
-    router->route("/routed_chats", [](dser::router &r) {
-        r.put("/pattern1", nullptr);
-    });
-
-    int err = server.serve("3000", router);
-    if (err) std::cout << "Error : " << err << std::endl;
+    std::cout << "Path segments:" << std::endl;
+    for (const auto& c : p.get_segments())
+    {
+        std::cout << c << std::endl;
+    }
 
     return 0;
 

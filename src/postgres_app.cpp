@@ -4,15 +4,18 @@
 
 using namespace dser::postgres;
 
-app::app() {
+app::app()
+{
     this->_conn = dser::postgres::connect("lex");
 }
 
-app::~app() {
+app::~app()
+{
     PQfinish(this->_conn);
 }
 
-bool app::connection_ok() const {
+bool app::connection_ok() const
+{
     ConnStatusType status = PQstatus(this->_conn);
     return status == CONNECTION_OK;
 }

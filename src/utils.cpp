@@ -29,13 +29,13 @@ namespace dser {
         return trim(std::string_view(s));
     }
     
-    std::vector<std::string_view> split(const std::string_view sv, const std::string_view delim)
+    std::vector<std::string> split(const std::string_view sv, const std::string_view delim)
     {
         auto l = sv.begin();
         auto r = sv.begin();
         std::string_view rem;
         size_t len;
-        std::vector<std::string_view> res;
+        std::vector<std::string> res;
 
         while (l < sv.end())
         {

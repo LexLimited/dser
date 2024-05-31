@@ -40,7 +40,7 @@ const char* skip_empty_symbols(const char* begin, const char* end, dser::json_co
         } else ++context->column;
         ++head;
     }
-    printf("Empty space of length %d\n-  -  -  -  -  -  -\n", head - begin);
+    printf("Empty space of length %lu\n-  -  -  -  -  -  -\n", head - begin);
     return head;
 }
 
@@ -54,7 +54,7 @@ const char* seek_next_json_token(
     return tk->begin;
 }
 
-const char* parse_string(dser::json_parser_token_t* tk, const char* end, dser::json_context* context)
+const char* parse_string(dser::json_parser_token_t* tk, const char* end /*, dser::json_context* context */)
 {
     char c;
     std::string parsed_value = "";
@@ -69,7 +69,7 @@ const char* parse_string(dser::json_parser_token_t* tk, const char* end, dser::j
     return head + 1;
 }
 
-const char* parse_numeric(dser::json_parser_token_t* tk, const char* end, dser::json_context* context)
+const char* parse_numeric(dser::json_parser_token_t* tk, const char* end /*, dser::json_context* context */)
 {
     char c;
     std::string parsed_string = "";
@@ -107,7 +107,7 @@ const char* parse_token(
         dser::json_parser_token_t* tk,
         dser::json_context* context)
 {
-    if (tk->type == dser::json_parser_token::TK_STRING) return parse_string(tk, end, context);
+    if (tk->type == dser::json_parser_token::TK_STRING) return parse_string(tk, end /*, context */);
     
     if (tk->type == dser::json_parser_token::TK_CURLY_BRACKET_LEFT)
     {
@@ -158,7 +158,7 @@ const char* parse_token(
         return tk->end = tk->begin + 1;
     }
     
-    if (tk->type == dser::json_parser_token::TK_NUMERIC) return parse_numeric(tk, end, context);
+    if (tk->type == dser::json_parser_token::TK_NUMERIC) return parse_numeric(tk, end /*, context */);
     if (tk->type == dser::json_parser_token::TK_COLON)
     {
         return tk->end = tk->begin + 1;
@@ -223,8 +223,8 @@ namespace dser
             }
 
             this->_context.column += tk.end - tk.begin;
-            printf("TOKEN: %.*s\nline: %d, column: %d, length: %d\n--------------------------\n",
-                    tk.end - tk.begin, tk.begin,
+            printf("TOKEN: %.*s\nline: %d, column: %d, length: %lu\n--------------------------\n",
+                    static_cast<int>(tk.end - tk.begin), tk.begin,
                     this->_context.line, this->_context.column, tk.end - tk.begin);
             // printf("Next token at %p at depth %d at line %d: \n\n",
             //        (void*)head, this->_context.depth, this->_context.line);

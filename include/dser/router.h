@@ -8,31 +8,37 @@
 #include "inet_socket.h"
 #include "http.h"
 
-namespace dser {
+namespace dser
+{
 
     using handler_func = std::function<void(inet_socket&, http::http&)>;
     
-    struct path_matching_item {
-        handler_func handler;
-        http::http_method method;
-    };
 
     class router {
+        /// An item implements a map pattern -> action.
+        /// If `r == nullptr`, call the handler
+        /// otherwise match http with `r`
+        struct item
+        {
+            handler_func handler;
+            std::string pattern;
+            http::http_method method;
+            router* r;
+        };
+    
         public:
+            ~router();
 
             void get(std::string_view, handler_func);
             void put(std::string_view, handler_func);
             void post(std::string_view, handler_func);
+
             void route(std::string_view, std::function<void(router&)>);
 
             void match(const http::http& http);
-
-            const std::unordered_map<std::string, path_matching_item> &path_matches() const noexcept { return this->_path_matches; };
-            const std::unordered_map<std::string, router> &subrouters() const noexcept { return this->_subrouters; };
-
+        
         private:
-            std::unordered_map<std::string, path_matching_item> _path_matches;
-            std::unordered_map<std::string, router> _subrouters;
+            std::vector<item> _items;
     };
 
 }

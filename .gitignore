@@ -1,6 +1,15 @@
 build
-.cache
+.cache/
+.cmake/
+cmake_*
+CMakeCache.txt
+lib/
+CMakeFiles/
+CTest*
+Doxyfile
 db
+doc
+Makefile
 run.sh
 update_clang_config.sh
 compile_commands.json

@@ -18,6 +18,7 @@ websocket::websocket() {}
 
 websocket::websocket(http::http& hs_request, int fd)
 {
+    (void)hs_request;
     this->_fd = fd;
 }
 

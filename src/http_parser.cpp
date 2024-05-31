@@ -141,7 +141,7 @@ http_parser::http_parser_error http_parser::parse_http_string(std::string& str, 
     err = this->parse_status_line({ str.begin(), str.begin() + end_of_status_line }, h);
     if (err != http_parser_error::NO_ERROR) return err;
     
-    std::vector<std::string_view> parts = dser::split(dser::trim_any({ str.begin() + end_of_status_line, str.end() }, "\r\n"), "\r\n\r\n");
+    std::vector<std::string> parts = dser::split(dser::trim_any({ str.begin() + end_of_status_line, str.end() }, "\r\n"), "\r\n\r\n");
 
     if (parts.size() < 2) return http_parser_error::NO_ERROR;
     err = this->parse_headers(parts[0], h);

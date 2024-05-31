@@ -6,23 +6,26 @@ namespace dser {
 
     void router::get(std::string_view pattern, handler_func h)
     {
-        this->_path_matches[std::string(pattern)] = { h, http::http_method::GET };
+        (void)pattern;
+        (void)h;
     }
 
     void router::put(std::string_view pattern, handler_func h)
     {
-        this->_path_matches[std::string(pattern)] = { h, http::http_method::PUT };
+        (void)pattern;
+        (void)h;
     }
 
     void router::post(std::string_view pattern, handler_func h)
     {
-        this->_path_matches[std::string(pattern)] = { h, http::http_method::POST };
+        (void)pattern;
+        (void)h;
     }
 
     void router::route(std::string_view pattern, std::function<void(router&)> route_func)
     {
-        this->_subrouters[std::string(pattern)] = router{};
-        route_func((*this->_subrouters.find(std::string(pattern))).second);
+        (void)pattern;
+        (void)route_func;
     }
 
     void match(const http::http& http)

@@ -10,7 +10,7 @@ namespace dser
 
     void sleep_ms(long ms);
     std::string_view trim(const std::string& s);
-    std::vector<std::string_view> split(const std::string_view sv, const std::string_view delim);
+    std::vector<std::string> split(const std::string_view sv, const std::string_view delim);
     std::pair<std::string_view, std::string_view> split_first(const std::string_view sv, const std::string_view delim);
     std::string_view trim(const std::string_view sv);
     bool in_string(const std::string_view &sv, char c);

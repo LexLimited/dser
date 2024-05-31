@@ -12,6 +12,11 @@ namespace dser
     class exception : public std::exception
     {
         public:
+            exception(std::source_location loca = std::source_location::current())
+                :   _what(std::format("file: {}({}:{}) in function: {}",
+                            loca.file_name(), loca.line(), loca.column(), loca.function_name()))
+            {}
+
             exception(std::string w, std::source_location loca = std::source_location::current())
                 :   _what(std::format("file: {}({}:{}) in function: {}: {}",
                             loca.file_name(), loca.line(), loca.column(), loca.function_name(), w))

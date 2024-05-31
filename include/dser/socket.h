@@ -28,23 +28,44 @@ namespace dser
     class socket
     {
         public:
-            virtual ~socket() = default;
+            socket() = default;
+            socket(const socket&) = delete;
+            socket(socket &&other);
+
+            virtual ~socket() { this->terminate(); };
 
             virtual int open() = 0;
-            virtual int close() = 0;
+            // virtual int close() = 0;
             virtual int listen() = 0;
             virtual int connect(const char* node, const char* servicef) = 0;
             virtual int accept() = 0;
     
             inline int fd() const noexcept { return this->_fd; }
             
+            inline void set_fd(int fd) noexcept
+            {
+                // this->close();
+                this->terminate();
+                this->_fd = fd;
+            }
+
             // set timeout in milliseocnds
             int set_timeout(int t);
 
+            socket& operator=(const socket&) = delete;
+            socket& operator=(socket &&other);
+
         protected:
-            int _fd = 0;
+            int _fd = -1;
             int _timeout = 0; // snd / rcv timeout in milliseocnds
+    
+            friend void swap(socket&, socket&);
+
+        private:
+            void terminate();
     };
+
+    void swap(socket&, socket&);
 
 }
 

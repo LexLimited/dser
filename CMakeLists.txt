@@ -6,23 +6,34 @@ project(${TARGET})
 
 file(GLOB_RECURSE CPP_SRC ${CMAKE_CURRENT_SOURCE_DIR}/src/*.cpp)
 
+message("NON_TEST CPP_SRC = ${CPP_SRC}")
+
 include_directories(
 	"include"
 )
 
-set(CMAKE_CXX_FLAGS "-Wall -Wextra -Wpedantic -g -Og -std=c++20 -fopenmp")
+set(CMAKE_CXX_FLAGS "-Werror -Wall -Wextra -Wpedantic -std=c++20 -fopenmp")
 
 find_package(OpenSSL)
 find_package(GnuTLS)
 
-add_executable(${TARGET} ${CPP_SRC})
+# Select between library and executable build
+option(MAKE_LIB "will build a static library" OFF)
+if (MAKE_LIB)
+    add_library(${TARGET} STATIC ${CPP_SRC})
+else()
+    add_executable(${TARGET} ${CPP_SRC})
+endif()
 
 target_link_libraries(${TARGET}
     OpenSSL::SSL
     OpenSSL::Crypto
     GnuTLS::GnuTLS
-)
+    )
 
 target_link_libraries(${TARGET}
     /usr/lib/libpq.so
-)
+    )
+
+# Add subdirectory for tests
+# add_subdirectory(tests)

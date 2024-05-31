@@ -12,7 +12,7 @@ http::~http() {}
 
 int http::read_from_file(const char* path)
 {
-
+    (void)path;
     return 0;
 }
 
