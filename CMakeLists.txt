@@ -6,8 +6,6 @@ project(${TARGET})
 
 file(GLOB_RECURSE CPP_SRC ${CMAKE_CURRENT_SOURCE_DIR}/src/*.cpp)
 
-message("NON_TEST CPP_SRC = ${CPP_SRC}")
-
 include_directories(
 	"include"
 )

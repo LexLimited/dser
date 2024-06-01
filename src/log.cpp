@@ -2,4 +2,7 @@
 
 namespace dser::log
 {
+
+    bool debug<>::_color_output = true;
+
 }

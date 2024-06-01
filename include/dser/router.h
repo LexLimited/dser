@@ -11,8 +11,7 @@
 namespace dser
 {
 
-    using handler_func = std::function<void(inet_socket&, http::http&)>;
-    
+    using handler_func = std::function<void(inet_socket&, const http::http&)>;
 
     class router {
         /// An item implements a map pattern -> action.
@@ -23,20 +22,30 @@ namespace dser
             handler_func handler;
             std::string pattern;
             http::http_method method;
-            router* r;
+            class router* router;
         };
     
         public:
+            router() = default;
+            router(const router&) = delete;
             ~router();
 
             void get(std::string_view, handler_func);
             void put(std::string_view, handler_func);
             void post(std::string_view, handler_func);
-
             void route(std::string_view, std::function<void(router&)>);
 
-            void match(const http::http& http);
-        
+            /// Finds the first match
+            void match(inet_socket& sock, const http::http& http);
+
+        private:
+            /// Adds a calling item
+            void add_item(const std::string_view&, router* r);
+            /// Adds a routing item
+            void add_item(const std::string_view&, http::http_method, handler_func);
+            /// Recursively clears routing items. Does not delete itself.
+            void clear();
+
         private:
             std::vector<item> _items;
     };

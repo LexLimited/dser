@@ -16,11 +16,20 @@ namespace dser
         
             const std::vector<char>& bytes() const noexcept { return this->_bytes; }
 
-            size_t size() const noexcept { return this->_size; }
+            size_t size() const noexcept
+            {
+                return this->_size;
+            }
 
-            size_t capacity() const { return this->_bytes.size(); }
+            size_t capacity() const
+            {
+                return this->_bytes.size();
+            }
 
-            size_t cap_remaining() const { return this->capacity() - this->_size; }
+            size_t cap_remaining() const noexcept
+            {
+                return this->capacity() - this->_size;
+            }
             
             void add_capacity(size_t n)
             {
@@ -39,7 +48,10 @@ namespace dser
                 this->_size += n;
             }
 
-            bool should_resize() const { return this->_size >= this->_growth_threshold * this->capacity(); }
+            bool should_resize() const noexcept
+            {
+                return this->_size >= this->_growth_threshold * this->capacity();
+            }
             
             void resize()
             {

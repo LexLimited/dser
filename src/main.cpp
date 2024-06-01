@@ -1,3 +1,5 @@
+#define NDEBUG
+
 #include <assert.h>
 #include <cerrno>
 #include <cstdio>
@@ -28,6 +30,7 @@
 #include <gnutls/crypto.h>
 
 #include <ranges>
+#include "dser/generics.h"
 #include "omp.h"
 
 #include <dser/exception.h>
@@ -131,20 +134,77 @@ int hosting_test()
 {
     dser::inet_socket server;
     dser::assert_perr(server.open() > 0, "Failed to open");
-    dser::assert_perr(!server.set_timeout(1000), "Failed to set timeout");
+    dser::assert_perr(!server.set_timeout(30'000), "Failed to set timeout");
     dser::assert_perr(!server.bind("3000"), "Failed to bind");
     dser::assert_perr(!server.listen(), "Failed to listen");
 
+    dser::router r;
+    r.get("/", [](dser::inet_socket& stream, const dser::http::http&) {
+        dser::http::http http;
+        http.set_status_code(200);
+        http.set_status("OK");
+        http.set_protocol(dser::http::http_protocol::HTTP);
+        http.set_method(dser::http::http_method::POST);
+        http.set_protocol_vertsion(dser::http::http_protocol_version::V_2_0);
+        http.set_header("Keep-Alive", "timeout=5, max=1000");
+
+        http.set_body(
+            "<!DOCTYPE html>"
+            "<head>"
+            "</head>"
+            "<body>"
+            "   <h1>Welcome to my website</h1>"
+            "</body>"
+        );
+        const auto buf = http.stringify();
+        ssize_t wrote_bytes = ::write(stream.fd(), buf.c_str(), buf.size());
+        dser::assert_perr(wrote_bytes >= 0, "Failed to write:");
+      
+        dser::sleep_ms(1'000);
+
+        http.set_body("End");
+        wrote_bytes = ::write(stream.fd(), buf.c_str(), buf.size());
+        dser::assert_perr(wrote_bytes >= 0, "Failed to write:");
+    });
+
+    r.get("/image", [](dser::inet_socket& stream, const dser::http::http&) {
+        dser::http::http http;
+        http.set_status_code(200);
+        http.set_protocol(dser::http::http_protocol::HTTP);
+        http.set_method(dser::http::http_method::POST);
+        http.set_protocol_vertsion(dser::http::http_protocol_version::V_2_0);
+        http.set_body("Image");
+
+        const auto buf = http.stringify();
+        std::cout << "Built response http" << std::endl;
+        std::cout << buf << std::endl;
+        ssize_t wrote_bytes = ::write(stream.fd(), buf.c_str(), buf.size());
+        dser::assert_perr(wrote_bytes >= 0, "Failed to write:");
+        
+        std::cout << "Wrote " << wrote_bytes << " bytes" << std::endl;
+    });
+
+    std::cout << "Router initialized" << std::endl;
     while(1)
     {
+        // Accept connection and create a stream
         int fd = server.accept();
+        dser::assert_perr(fd >= 0, "Failed to accept a connection:");
+        dser::inet_socket stream;
+        stream.set_fd(fd);
+
+        // Read from connection
+        std::string buf;
+        buf.reserve(1024);
+        ssize_t read_bytes = ::read(fd, buf.data(), sizeof(buf));
+        dser::assert_perr(read_bytes >= 0, "Failed to read from incoming connection");
+
+        // Parse message into http class
+        dser::http::http req;
+        dser::http::http_parser http_parser;
+        http_parser.parse_http_string(buf, req);
         
-        if (fd <= 0) {
-            printf("Failed to accept: %s\n", strerror(errno));
-        } else {
-            printf("Connection accepted: %d\n", fd);
-            handle_connection(fd);
-        }
+        r.match(stream, req);
 
         dser::sleep_ms(10);
     }
@@ -233,16 +293,26 @@ void pipe_test()
             write_pipe.read_to_string());
 }
 
+void test_json_parser()
+{
+    dser::log::println("JSON parser test");
+
+    dser::json_parser parser;
+    dser::fs::file f("../assets/json/1.json");
+    dser::assert_perr(!f.error());
+    
+    dser::log::debug("File ptr:", (void*)f.stream());
+    dser::log::debug("Data ptr:", (void*)f.data());
+
+    std::cout << "file data:" << std::endl;
+    std::cout << f.data() << std::endl;
+    parser.parse(f.data(), f.size());
+}
+
 int main()
 {
-    dser::path p("/a/b/*");
-
-    std::cout << "Path segments:" << std::endl;
-    for (const auto& c : p.get_segments())
-    {
-        std::cout << c << std::endl;
-    }
-
+    // hosting_test();
+    test_json_parser();
     return 0;
 
     dser::postgres::app app;

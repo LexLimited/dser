@@ -33,6 +33,11 @@ namespace dser
                 return _segments[i];
             }
 
+            size_t n_segments() const
+            {
+                return _segments.size();
+            }
+
         private:
             std::vector<std::string> _segments;
     };

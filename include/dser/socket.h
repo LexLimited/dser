@@ -8,13 +8,6 @@
 
 namespace dser
 {
-// A -> B -> C
-// B : A
-// C : B
-// ((A*)&b)->foo() iz B
-// ((A*)&c)->foo() iz C
-// A::foo - virtual
-    
 
     class socket_exception : public ::dser::exception
     {

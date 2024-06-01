@@ -28,8 +28,8 @@ namespace dser::http
         pfd.events = POLLIN;
         */
 
-        int read_timeout = 3000; // 30;   // in ms
-        // int poll_timeout = 300;  // in ms
+        int read_timeout = 3000;
+        // int poll_timeout = 3000;
 
         dser::byte_buffer buffer(1024);
 
@@ -44,7 +44,6 @@ namespace dser::http
             
         do {
             read_status = ::recv(this->_sock.fd(), buffer.head(), buffer.cap_remaining(), 0);
-            // read_status = ::recv(this->_sock.fd(), buffer.data(), buffer.capacity(), 0);
             if (read_status < 0)
             {
                 std::cout << "Failed to read from connection: " << strerror(errno) << std::endl;

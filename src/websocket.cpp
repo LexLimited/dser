@@ -112,8 +112,10 @@ int websocket::read() {
         }
         
         dser::algorithms::apply_xormask(
-                &this->_frame.mask, this->_frame.payload.data(),
-                sizeof(uint32_t), this->_frame.payload_length);
+                &this->_frame.mask,
+                this->_frame.payload.data(),
+                sizeof(uint32_t),
+                this->_frame.payload_length);
         
         this->_message.insert(
                 this->_message.end(),
