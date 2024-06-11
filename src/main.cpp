@@ -1,11 +1,10 @@
-#define NDEBUG
-
 #include <assert.h>
 #include <cerrno>
 #include <cstdio>
 #include <cstdlib>
 #include <cstring>
 #include <gnutls/gnutls.h>
+#include <iomanip>
 #include <iostream>
 #include <libpq-fe.h>
 #include <limits>
@@ -50,13 +49,13 @@
 #include <dser/websocket.h>
 #include <dser/signals.h>
 #include <dser/crypto.h>
-// #include <dser/postgres.h>
 #include <dser/postgres_command.h>
 #include <dser/server.h>
 #include <dser/router.h>
 #include <dser/pipe.h>
 #include <dser/log.h>
 #include <dser/path.h>
+#include <dser/fs.h>
 
 dser::http::http create_websocket_handshake_response(dser::http::http& req)
 {
@@ -212,11 +211,6 @@ int hosting_test()
     return 0;
 }
 
-void display_startup_message()
-{
-    printf("Application started\n");
-}
-
 auto postgres_create_tables(dser::postgres::app &app)
 {
     std::string query = dser::postgres::read_query_from_file("create_tables.sql");
@@ -226,12 +220,11 @@ auto postgres_create_tables(dser::postgres::app &app)
 int test_postgres()
 {
     dser::pipe p(dser::pipe::pipe_type::READ);
-    dser::pipe::result pipe_result;
-    pipe_result = p.exec_complete("pg_ctl -D db/data -l log.log");
-    if (pipe_result.error)
+    auto pipe_result = p.exec_complete("pg_ctl -D db/data -l log.log");
+    if (!pipe_result.has_value())
     {
-        dser::log::debug("Failed to start pg server:", pipe_result.output);
-        return pipe_result.error;
+        dser::log::debug("Failed to start pg server:", pipe_result.value());
+        return pipe_result.error();
     }
 
     dser::postgres::app app;
@@ -264,8 +257,8 @@ int test_postgres()
         // PQprint(stdout, res.result(), &opts);
     }
 
-    pipe_result = p.exec_complete("pg_ctl stop -D db/data");
-    if (pipe_result.error)
+    auto stop_result = p.exec_complete("pg_ctl stop -D db/data");
+    if (stop_result.error())
     {
         throw dser::exception("Failed to stop pg server");
     }
@@ -289,8 +282,8 @@ void pipe_test()
     }
 
     dser::log::debug("Succeeded with piping:",
-            read_pipe.read_to_string(),
-            write_pipe.read_to_string());
+            read_pipe.read_to_string().value(),
+            write_pipe.read_to_string().value());
 }
 
 void test_json_parser()
@@ -301,53 +294,98 @@ void test_json_parser()
     dser::fs::file f("../assets/json/1.json");
     dser::assert_perr(!f.error());
     
-    dser::log::debug("File ptr:", (void*)f.stream());
-    dser::log::debug("Data ptr:", (void*)f.data());
-
-    std::cout << "file data:" << std::endl;
-    std::cout << f.data() << std::endl;
+    dser::log::println("File ptr:", (void*)f.stream());
+    dser::log::println("Data ptr:", (void*)f.data());
+    dser::log::println("File data:", f.data());
+    
     parser.parse(f.data(), f.size());
+}
+
+void print_directory_recurse(
+        const dser::fs::directory& d,
+        int level = 0,
+        std::string prefix = "."
+)
+{
+    // hard code cut off directories nested too deeply
+    if (level > 3) return;
+
+    for (auto it : d)
+    {
+        // ignore current and parent directories
+        if (!std::strcmp(it.name(), ".") || !std::strcmp(it.name(), ".."))
+        {
+            continue;
+        }
+
+        std::cout << std::string(level * 4, ' ') << it.name();
+        if (it.type() == dser::fs::directory::item::file_type::DIRECTORY)
+        {
+            std::cout << '\\' << std::endl;
+            auto next_dir = dser::fs::directory(prefix + '/' + std::string(it.name()));
+            print_directory_recurse(next_dir, level + 1, prefix + '/' + it.name());
+        }
+        else
+        {
+            const auto stats = it.stats();
+            auto size = stats.value().st_size;
+
+            std::cout << std::fixed << 2;
+            std::cout << " : "
+                      << std::setprecision(2)
+                      << (double)(size) / (double)(1 << 10)
+                      << "K"
+                      << std::endl;
+        }
+    }
+}
+
+// path is a relative path
+void print_directory_recurse(const char* path)
+{
+    const auto dir = dser::fs::directory(path);
+    print_directory_recurse(dir, 0, path);
+}
+
+void fs_test()
+{
+    print_directory_recurse(".");
+}
+
+void github_test()
+{
+    auto client = dser::inet_socket::new_client("3000");
+    client.set_allow_change_family(true);
+
+    client.health_check();
+
+    int status = client.connect("github.com", "443");
+    if (status)
+    {
+        dser::log::println("Error: inet_socket connect returned", status);
+        dser::log::println("Reason:", strerror(errno));
+    }
+    dser::log::println("Connected to github.com");
+
+    if (int err = client.listen())
+    {
+        std::cerr << "Client doesn't listen: " << strerror(errno) << std::endl;
+        return;
+    }
+
+    dser::http::http req;
+    req.set_method(dser::http::http_method::GET);
+    req.set_url("/");
+
+    // ::write
 }
 
 int main()
 {
-    // hosting_test();
-    test_json_parser();
+    // fs_test();
+    github_test();
     return 0;
 
-    dser::postgres::app app;
-    if (!app.connection_ok()) {
-        std::cout << "Connection error" << std::endl;
-        std::cout << PQerrorMessage(app.conn()) << std::endl;
-        return -1;
-    }
-
-    auto res = postgres_create_tables(app);
-    auto status = PQresultStatus(res.result());
-    if (status != PGRES_COMMAND_OK)
-    {
-        std::cout << "status: " << status << std::endl;
-        std::cout << "Error creating tables:" << std::endl;
-        std::cout << PQresultErrorMessage(res.result()) << std::endl;
-    }
-
-    res = dser::postgres::exec_cmd(app, "SELECT * FROM users");
-    status = PQresultStatus(res.result());
-    if (status != PGRES_TUPLES_OK)
-    {
-        std::cout << "status: " << status << std::endl;
-        std::cout << "Error selecting from users:" << std::endl;
-        std::cout << PQresultErrorMessage(res.result()) << std::endl;
-    }  else
-    {
-        std::cout << "Result" << std::endl;
-        std::cout << "Number of tuples: " << PQntuples(res.result()) << std::endl;
-        // PQprint(stdout, res.result(), &opts);
-    }
-
-    return 0;
-
-    dser::signals::handle_signals();
-    hosting_test();
+    // dser::signals::handle_signals();
 }
 

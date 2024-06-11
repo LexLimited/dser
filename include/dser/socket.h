@@ -32,7 +32,8 @@ namespace dser
             virtual int listen() = 0;
             virtual int connect(const char* node, const char* servicef) = 0;
             virtual int accept() = 0;
-    
+            int health_check() const;
+
             inline int fd() const noexcept { return this->_fd; }
             
             inline void set_fd(int fd) noexcept

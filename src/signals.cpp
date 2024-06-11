@@ -3,12 +3,9 @@
 
 namespace dser
 {
-    
+
     void signals::signal_handler(int sig)
     {
-        // ::close(3);    
-        std::cout << "interrupt handler: sig - " << sig << std::endl;
-
         std::signal(sig, SIG_DFL);
         std::raise(sig);
     }

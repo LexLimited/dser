@@ -8,6 +8,7 @@
 namespace dser
 {
 
+    /// Asserts the condition, prints the message and `strerror(errno)`
     void assert_perr(int success, const char* msg = nullptr);
 
 }

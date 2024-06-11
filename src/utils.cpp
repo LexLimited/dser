@@ -123,5 +123,6 @@ namespace dser {
     {
         return std::chrono::duration_cast<std::chrono::milliseconds>(clock_time() - last).count();
     }
+
 }
 

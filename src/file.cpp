@@ -1,9 +1,9 @@
-#include "dser/log.h"
 #include <cerrno>
 #include <cstring>
 #include <sys/mman.h>
 
 #include <dser/file.h>
+#include <dser/log.h>
 
 namespace dser::fs
 {
@@ -75,9 +75,12 @@ namespace dser::fs
     
         this->_size = f_stat.st_size;
         this->_data = (char*)mmap(
-                nullptr, this->_size,
-                PROT_READ, MAP_PRIVATE,
-                this->_fd, 0);
+                nullptr,
+                this->_size,
+                PROT_READ,
+                MAP_PRIVATE,
+                this->_fd,
+                0);
 
         std::fclose(this->_stream);
         if (!this->_data)

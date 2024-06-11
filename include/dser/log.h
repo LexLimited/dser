@@ -1,60 +1,109 @@
 #ifndef __DSER_LOG_H__
 #define __DSER_LOG_H__
 
-#include "dser/generics.h"
 #include <cstdlib>
+#include <concepts>
 #include <format>
 #include <iostream>
+#include <ostream>
 #include <source_location>
 #include <string_view>
+
+#include <dser/generics.h>
 
 namespace dser::log
 {
 
-    namespace {
+    namespace
+    {
 
         template<typename T>
-            static void print_(T t)
-            {
-                std::cout << t;
-            }
+        concept printable = requires(T t, std::ostream& os)
+        {
+            os << t;
+        };
 
-        template<typename T, typename ... Args>
-            static void print_(T t, Args ... args)
-            {
-                std::cout << t << " ";
-                print_(args...);
-            }
+        template<typename T>
+        concept iterable = requires(T t)
+        {
+            {  t.begin() };
+            { t.end() };
+        };
 
+        template<printable T>
+        static void print_(T t)
+        {
+            std::cout << t;
+        }
+
+        template<printable T, printable ... Args>
+        static void print_(T t, Args ... args)
+        {
+            std::cout << t << " ";
+            print_(args...);
+        }
+
+        class debug_base
+        {
+            public:
+                debug_base() : _os(std::cout)
+            {}
+
+                debug_base(const std::source_location& loca)
+                    : _loca(loca), _os(std::cout)
+                {}
+
+            protected:
+                std::source_location _loca;
+                [[maybe_unused]] std::ostream& _os;
+        };
+    
     }
 
-    template<typename ... Args>
+    template<printable ... Args>
     void println(Args ... args)
     {
         print_(args...);
         std::cout << std::endl;
     }
 
+    template<iterable Arr>
+    void print_container(Arr arr, const std::string_view& delim = ", ")
+    {
+        auto it = arr.begin();
+        auto end = arr.end();
+        if (it == end) return;
+        
+        auto last = std::prev(end);
+
+        std::cout << '(';
+        while (it < last)
+        {
+            std::cout << *it << delim;
+            ++it;
+        }
+        std::cout << *last << ')';
+    }
+
     /// A class for logging in debug mode
-    template<typename ... Args>
-    class debug
+    template<printable ... Args>
+    class debug : protected debug_base
     {
 #if not defined(NDEBUG)
         public:
-            debug(Args ... args)
-                : _loca(std::source_location::current())
+            debug(Args ... args) : debug_base(std::source_location::current())
             {
-                std::cout << std::format("[LOG] In: file `{} ({}:{})`, function `{}`: ",
+                _os << std::format("[LOG] In: file `{} ({}:{})`, function `{}`: ",
                         _loca.file_name(),
                         _loca.line(),
                         _loca.column(),
                         _loca.function_name());
                 print_(args...);
-                std::cout << std::endl;
+                _os << std::endl;
             }
 
-        private:
-            std::source_location _loca;
+            void set_out_file()
+            {}
 #else // if defined(NDEBUG)
         public:
             debug(Args ...) {}
@@ -78,50 +127,51 @@ namespace dser::log
 #if not defined(NDEBUG)
         public:
             debug()
-                : _loca(std::source_location::current())
+                : _loca(std::source_location::current()),
+                  _os(std::cout)
             {}
 
-            template<typename ... Args>
+            template<printable ... Args>
             void warn(Args ... args_)
             {
                 this->_severity = LogSeverity::WARNING;
                 if (_color_output)
-                    std::cout << ASCII_EscapeSequences::YELLOW;
+                    _os << ASCII_EscapeSequences::YELLOW;
                 this->log(args_...);
             }
             
-            template<typename ... Args>
+            template<printable ... Args>
             void error(Args ... args_)
             {
                 this->_severity = LogSeverity::ERROR;
                 if (_color_output)
-                    std::cout << ASCII_EscapeSequences::RED;
+                    _os << ASCII_EscapeSequences::RED;
                 this->log(args_...);
             }
 
-            template<typename ... Args>
+            template<printable ... Args>
             void fatal(Args ... args_)
             {
                 this->_severity = LogSeverity::FATAL;
                 if (_color_output)
-                    std::cout << ASCII_EscapeSequences::RED;
+                    _os << ASCII_EscapeSequences::RED;
                 this->log(args_...);
                 std::abort();
             }
             
-            template<typename ... Args>
+            template<printable ... Args>
             void log(Args ... args_)
             {
-                std::cout << this->get_severity_prefix() << ": ";
-                std::cout << std::format("In: file `{} ({}:{})`, function `{}`: ",
+                _os << this->get_severity_prefix() << ": ";
+                _os << std::format("In: file `{} ({}:{})`, function `{}`: ",
                         _loca.file_name(),
                         _loca.line(),
                         _loca.column(),
                         _loca.function_name());
                 print_(args_...);
                 if (_color_output)
-                    std::cout << ASCII_EscapeSequences::NO_COLOR;
-                std::cout << std::endl;
+                    _os << ASCII_EscapeSequences::NO_COLOR;
+                _os << std::endl;
             }
 
         private:
@@ -154,20 +204,21 @@ namespace dser::log
 
             std::source_location _loca;
             LogSeverity _severity = LogSeverity::INFO;
+            std::ostream& _os;
 #else // if defined(NDEBUG)
         public:
             debug() {}
             
-            template<typename ... Args>
+            template<printable ... Args>
             void warn(Args ...) {}
             
-            template<typename ... Args>
+            template<printable ... Args>
             void error(Args ...) {}
 
-            template<typename ... Args>
+            template<printable ... Args>
             void fatal(Args ...) {}
             
-            template<typename ... Args>
+            template<printable ... Args>
             void log(Args ...) {}
 #endif
     };

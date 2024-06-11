@@ -12,15 +12,21 @@ namespace dser
     class inet_socket : public ::dser::socket
     {
         public:
-            inet_socket(int family = AF_INET);
+            static inet_socket new_client(const char* port);
+            static const int DEFAULT_FAMILY = AF_INET6; /// defaults to IPv4 protocol
+
+        public:
+            inet_socket(int family = DEFAULT_FAMILY);
             inet_socket(const inet_socket&) = delete;
             inet_socket(inet_socket&& other);
 
             ~inet_socket();
   
-            inline int family() const noexcept { return this->_family; }
+            int family() const noexcept;
+            void set_family(int family);
+            void set_allow_change_family(bool value) noexcept;
 
-            int get_address_info(const char* node, const char* service, ::addrinfo **ai) const;
+            int get_address_info(const char* node, const char* service, ::addrinfo **ai);
             
             int open() override;
             int bind(const char* port);
@@ -33,6 +39,7 @@ namespace dser
 
         private:
             int _family;
+            bool _allow_change_family = false;
     };
 
 }

@@ -5,6 +5,8 @@
 #include <string>
 #include <string_view>
 
+#include <dser/utils.h>
+
 namespace dser
 {
 
@@ -17,24 +19,18 @@ namespace dser
                 WRITE,
             };
 
-            struct result
-            {
-                int error;
-                std::string output;
-            };
-
         private:
             static constexpr const char* type_to_ptr(pipe_type);
 
         public:
-            pipe(pipe_type);
+            pipe(pipe_type = pipe_type::READ);
             ~pipe();
 
             int exec(const std::string_view& cmd);
-            result exec_complete(const std::string_view& cmd);
+            dser::result<std::string, int> exec_complete(const std::string_view& cmd);
             int close();
             int fd() const;
-            std::string read_to_string() const;
+            dser::result<std::string> read_to_string() const;
 
         private:
             FILE* _file;

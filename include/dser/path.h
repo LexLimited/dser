@@ -13,30 +13,12 @@ namespace dser
     class path
     {
         public:
-            path(const std::string_view& str)
-            {
-                set(str);
-            }
+            path(const std::string_view& str);
 
-            void set(const std::string_view& str)
-            {
-                _segments = split(str, "/");
-            }
-
-            const std::vector<std::string> get_segments() const noexcept
-            {
-                return _segments;
-            }
-
-            const std::string get_segment(size_t i) const
-            {
-                return _segments[i];
-            }
-
-            size_t n_segments() const
-            {
-                return _segments.size();
-            }
+            void set(const std::string_view& str);
+            const std::vector<std::string> get_segments() const noexcept;
+            const std::string get_segment(size_t i) const;
+            size_t n_segments() const;
 
         private:
             std::vector<std::string> _segments;
