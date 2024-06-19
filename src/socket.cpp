@@ -70,27 +70,101 @@ namespace dser
         : _fd(other._fd), _timeout(other._timeout)
     {}
 
-    int socket::health_check() const
+    static int check_fd(const socket& sock)
     {
-        std::cout << "Socket health check:" << std::endl;
-
-        if (this->_fd < 0)
+        if (auto fd = sock.fd() < 0)
         {
-            std::cerr << "    [CHECK ERROR] Socket's fd is invalid (" << this->_fd << ')' << std::endl;
+            std::cerr << "    Socket's fd is invalid (" << fd << ')' << std::endl;
             return -1;
         }
+        return 0;
+    }
 
-        struct sockaddr_storage sa;
+    static int check_self_info(const socket& sock)
+    {
+        ::sockaddr_storage sa;
         socklen_t addr_len = sizeof(sa);
 
-        int err = ::getsockname(this->_fd, (::sockaddr*)&sa, &addr_len);
+        int err = ::getsockname(sock.fd(), (::sockaddr*)&sa, &addr_len);
         if (err)
         {
-            std::cerr << "    [CHECK ERROR] Failed to get socket name. Reason: " << strerror(errno) << std::endl;
+            std::cerr << "    Failed to get socket name. Reason: " << strerror(errno) << std::endl;
             return err;
         }
 
-        std::cout << "    [CHECK OK] Socket appears to be healthy" << std::endl;
+        char host[NI_MAXHOST];
+        char service[NI_MAXSERV];
+        err = ::getnameinfo((::sockaddr*)&sa, addr_len, host, sizeof(host), service, sizeof(service), NI_NUMERICHOST | NI_NUMERICSERV);
+        if (err)
+        {
+            std::cerr << "    Failed to get socket address info. Reason: " << gai_strerror(err) << std::endl;
+        }
+
+        std::cout << "    Local socket address: " << host << ':' << service << std::endl;
+        return 0;
+    }
+
+    static int check_connection(const socket& sock)
+    {
+        struct sockaddr_storage sa;
+        socklen_t addr_len = sizeof(sa);
+
+        int err = ::getsockname(sock.fd(), (::sockaddr*)&sa, &addr_len);
+        if (err)
+        {
+            std::cerr << "    Failed to get socket name. Reason: " << gai_strerror(errno) << std::endl;
+            return err;
+        }
+
+        return 0;
+    }
+
+    static int check_peer_info(const socket& sock)
+    {
+        ::sockaddr_storage sa;
+        socklen_t addr_len = sizeof(sa);
+
+        int err = ::getpeername(sock.fd(), (::sockaddr*)&sa, &addr_len);
+        if (err)
+        {
+            std::cerr << "    Failed to get peer name. Reason: " << strerror(errno) << std::endl;
+            return err;
+        }
+
+        char host[NI_MAXHOST];
+        char service[NI_MAXSERV];
+        err = ::getnameinfo((::sockaddr*)&sa, addr_len, host, sizeof(host), service, sizeof(service), NI_NUMERICHOST | NI_NUMERICSERV);
+        if (err)
+        {
+            std::cerr << "    Failed to get peer socket address info. Reason: " << gai_strerror(err) << std::endl;
+            return err;
+        }
+
+        std::cout << "    Peer socket address: " << host << ':' << service << std::endl;
+        return 0;
+    }
+
+    int socket::health_check() const
+    {
+        std::cout << "Socket health check:" << std::endl;
+        int err;
+        int err_self_info;
+        int err_peer_info;
+
+        if ((err = check_fd(*this)) < 0) return err;
+        err_self_info = check_self_info(*this);
+        if ((err = check_connection(*this))) return err;
+        err_peer_info = check_peer_info(*this);
+
+        if (!err && !err_self_info && !err_peer_info)
+        {
+            std::cout << "    Socket appears to be healthy" << std::endl;
+        }
+        else
+        {
+            std::cout << "    Some issues were detected" << std::endl;
+        }
+
         return 0;
     }
 

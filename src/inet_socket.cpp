@@ -70,6 +70,46 @@ void inet_socket::set_allow_change_family(bool value) noexcept
     this->_allow_change_family = value;
 }
 
+static int get_address_info(
+        const char* node,
+        const char* service,
+        ::addrinfo** ai,
+        int ipv)
+{
+    if (ipv != AF_INET && ipv != AF_INET6)
+    {
+        std::cerr << "Invalid protocol supplied to `get_address_info`: " << ipv << std::endl;
+    }
+    
+    static const auto afamily_string = [](int family) {
+        switch (family)
+        {
+            case AF_INET: return "IPv4";
+            case AF_INET6: return "IPv6";
+            default: return "INVALID";
+        }
+    };
+
+    ::addrinfo ai_hints;
+    bzero(&ai_hints, sizeof(ai_hints));
+    ai_hints.ai_socktype = SOCK_STREAM;
+    ai_hints.ai_family = ipv;
+    ai_hints.ai_flags = AI_PASSIVE;
+
+    int status = ::getaddrinfo(node, service, &ai_hints, ai);
+    if (status)
+    {
+        std::cerr << "Failed to get address info for family "
+            << afamily_string(ipv)
+            << "."
+            << std::endl;
+
+        return status;
+    }
+
+    return status;
+}
+
 int inet_socket::get_address_info(const char* node, const char* service, ::addrinfo **ai)
 {
     static const auto afamily_string = [](int family) {
@@ -96,9 +136,15 @@ int inet_socket::get_address_info(const char* node, const char* service, ::addri
                   << std::endl;
         
         if (!this->_allow_change_family)
+        {
             std::cout << "Socket is not allowed to change the version of IP protocol."
                          " To enable it, call `set_allow_change_family(true)`."
                       << std::endl;
+        }
+        else
+        {
+            this->_family = 
+        }
 
         return status;
     }
@@ -213,6 +259,16 @@ int inet_socket::accept()
     sockaddr conn_sock;
     socklen_t conn_len;
     return ::accept(this->_fd, &conn_sock, &conn_len);
+}
+
+ssize_t inet_socket::send(const char* data, size_t data_len)
+{
+    return ::send(this->_fd, data, data_len, MSG_NOSIGNAL);
+}
+
+ssize_t inet_socket::recv(void* buf, size_t buf_len)
+{
+    return ::recv(this->_fd, buf, buf_len, MSG_ERRQUEUE);
 }
 
 inet_socket& inet_socket::operator=(inet_socket &&other)

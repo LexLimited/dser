@@ -12,7 +12,7 @@ namespace dser {
         std::this_thread::sleep_for(std::chrono::milliseconds(ms));
     }
     
-    std::string_view trim(const std::string_view sv)
+    std::string trim(const std::string_view& sv)
     {
         auto l = sv.begin();
         auto r = std::prev(sv.end());
@@ -23,10 +23,18 @@ namespace dser {
         if (l == sv.end() || *l == ' ') return {};
         return { l, std::next(r) };
     }
-    
+   
+    /*
     std::string_view trim(const std::string& s)
     {
         return trim(std::string_view(s));
+    }
+    */
+    
+    std::string wrap_string(const std::string_view& base, const std::string_view& wrap)
+    {
+        auto wrap_str = std::string(wrap);
+        return wrap_str + std::string(base) + wrap_str;
     }
     
     std::vector<std::string> split(const std::string_view sv, const std::string_view delim)

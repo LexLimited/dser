@@ -29,7 +29,12 @@
 #include <gnutls/crypto.h>
 
 #include <ranges>
+#include <fcntl.h>
+
+#include "dser/crypto/hex_base.h"
 #include "dser/generics.h"
+
+#include "dser/socket_utils.h"
 #include "omp.h"
 
 #include <dser/exception.h>
@@ -40,6 +45,7 @@
 #include <dser/utils.h>
 #include <dser/assert.h>
 #include <dser/json_parser.h>
+#include <dser/json_parser2.h>
 #include <dser/file.h>
 #include <dser/socket.h>
 #include <dser/inet_socket.h>
@@ -288,17 +294,13 @@ void pipe_test()
 
 void test_json_parser()
 {
-    dser::log::println("JSON parser test");
-
-    dser::json_parser parser;
-    dser::fs::file f("../assets/json/1.json");
+    // dser::json_parser parser;
+    dser::v2::json_parser parser;
+    dser::fs::file f("assets/json/1.json");
     dser::assert_perr(!f.error());
-    
-    dser::log::println("File ptr:", (void*)f.stream());
-    dser::log::println("Data ptr:", (void*)f.data());
-    dser::log::println("File data:", f.data());
-    
-    parser.parse(f.data(), f.size());
+   
+    parser.parse({ f.data(), f.data() + f.size() });
+    // parser.parse(f.data(), f.size());
 }
 
 void print_directory_recurse(
@@ -359,19 +361,47 @@ void github_test()
 
     client.health_check();
 
-    int status = client.connect("github.com", "443");
+    int status = client.connect("github.com", "80");
     if (status)
     {
         dser::log::println("Error: inet_socket connect returned", status);
         dser::log::println("Reason:", strerror(errno));
+        return;
     }
     dser::log::println("Connected to github.com");
 
-    if (int err = client.listen())
+    if (client.listen())
     {
         std::cerr << "Client doesn't listen: " << strerror(errno) << std::endl;
         return;
     }
+
+    dser::log::println("Socket flags:", ::fcntl(client.fd(), F_GETFL));
+
+    if (int pipe_capacity = ::fcntl(client.fd(), F_GETPIPE_SZ))
+    {
+        dser::log::println("Socket pipe capacity:", pipe_capacity);
+        if (pipe_capacity == -1)
+        {
+            dser::log::println("Pipe capacity -1 is abnormal. Error:", strerror(errno));
+            dser::log::println("Socket fd:", client.fd());
+            client.health_check();
+            return;
+        }
+    }
+
+    const std::string message = "GET / HTTP/1.1\r\nHost: github.com\r\nConnection: close\r\n\r\n";
+    dser::log::println("Will write to github:", message);
+    if (ssize_t status = client.send(message.data(), message.size()) < 0)
+    {
+        dser::log::println("Failed to write to github:", strerror(errno));
+        dser::log::println("Send status:", status);
+    }
+
+    std::string buf = std::string(2048, 0);
+    ssize_t recv_status = client.recv(buf.data(), buf.size());
+    dser::log::println("Recv status:", recv_status);
+    dser::log::println("Error:", strerror(errno));
 
     dser::http::http req;
     req.set_method(dser::http::http_method::GET);
@@ -380,10 +410,37 @@ void github_test()
     // ::write
 }
 
+void crypto_test()
+{
+    const std::vector<std::vector<uint8_t>> tests {
+        {}, {0}, {1}, {7}, {10}, {15}, {16}, {32}, {100}, {255},
+        {0, 1, 2, 3, 4}
+    };
+
+    for (const auto& test : tests)
+    {
+        const auto hs = dser::bytes_to_hex_string(test.data(), test.size());
+        dser::log::println(dser::wrap_string(hs, "'"));
+    }
+}
+
+void yew_test_test()
+{
+    auto client = dser::inet_socket::new_client("3001");
+    client.set_allow_change_family(true);
+    dser::assert_perr(client.connect("localhost", ":3000"));
+    client.health_check();
+
+    const char buf[]{ 0, 1, 1, 1 };
+    dser::assert_perr(client.send(buf, sizeof(buf)) >= 0);
+}
+
 int main()
 {
+    yew_test_test();
+    // test_json_parser();
     // fs_test();
-    github_test();
+    // github_test();
     return 0;
 
     // dser::signals::handle_signals();

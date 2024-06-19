@@ -33,6 +33,8 @@ namespace dser
             int listen() override;
             int connect(const char* node, const char* service) override;
             int accept() override;
+            ssize_t send(const char* data, size_t data_len);
+            ssize_t recv(void* buf, size_t buf_len);
 
             inet_socket& operator=(const inet_socket&) = delete;
             inet_socket& operator=(inet_socket&& other);

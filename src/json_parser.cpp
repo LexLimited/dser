@@ -209,16 +209,19 @@ namespace dser
                 tk.type != json_parser_token::TK_INVALID)
         {
             head = parse_token(end, &tk, &this->_context);
+
             if (this->_context.last_token_semantics & json_token_semantics::SEM_END_OF_JSON)
             {
                 return this->_context.error;
             }
-            if (!head)
+
+            if (!head || head == end)
             {
-                return this->_context.error;
-            }
-            if (head == end)
-            {
+                if (head == end)
+                {
+                    printf("Reached end of file\n");
+                }
+
                 return this->_context.error;
             }
 
@@ -228,6 +231,12 @@ namespace dser
                     this->_context.line, this->_context.column, tk.end - tk.begin);
             // printf("Next token at %p at depth %d at line %d: \n\n",
             //        (void*)head, this->_context.depth, this->_context.line);
+        }
+
+
+        if (tk.type == json_parser_token::TK_INVALID)
+        {
+            printf("Invalid token: %.*s\n", static_cast<int>(tk.end - tk.begin), tk.begin);
         }
 
         return 0;
