@@ -7,17 +7,12 @@
 #include <iomanip>
 #include <iostream>
 #include <libpq-fe.h>
-#include <limits>
-#include <memory>
 #include <netdb.h>
 #include <stdio.h>
 #include <string>
 #include <sys/poll.h>
-#include <thread>
 #include <unistd.h>
-#include <coroutine>
 #include <strings.h>
-#include <format>
 
 #include <net/ethernet.h>
 #include <sys/utsname.h>
@@ -28,15 +23,11 @@
 #include <openssl/sha.h>
 #include <gnutls/crypto.h>
 
-#include <ranges>
 #include <fcntl.h>
 
-#include "dser/crypto/hex_base.h"
-#include "dser/generics.h"
-
-#include "dser/socket_utils.h"
 #include "omp.h"
 
+#include <dser/crypto/hex_base.h>
 #include <dser/exception.h>
 #include <dser/http_connection.h>
 #include <dser/postgres.h>
@@ -359,8 +350,6 @@ void github_test()
     auto client = dser::inet_socket::new_client("3000");
     client.set_allow_change_family(true);
 
-    client.health_check();
-
     int status = client.connect("github.com", "80");
     if (status)
     {
@@ -368,6 +357,7 @@ void github_test()
         dser::log::println("Reason:", strerror(errno));
         return;
     }
+    client.health_check();
     dser::log::println("Connected to github.com");
 
     if (client.listen())
@@ -426,21 +416,46 @@ void crypto_test()
 
 void yew_test_test()
 {
+    const char* peer_port = "3000";
     auto client = dser::inet_socket::new_client("3001");
     client.set_allow_change_family(true);
-    dser::assert_perr(client.connect("localhost", ":3000"));
+    
+    if (auto err = client.connect("localhost", peer_port))
+    {
+        std::cerr << "Failed to connect to " << peer_port << std::endl;
+        std::cerr << "Error: " << strerror(err) << std::endl;
+        return;
+    }
+    
+    std::cout << "The socket is connected" << std::endl;
     client.health_check();
 
-    const char buf[]{ 0, 1, 1, 1 };
-    dser::assert_perr(client.send(buf, sizeof(buf)) >= 0);
+    const std::function<std::string()> create_example_request_json = []() {
+        std::string ret;
+        
+        ret += "{";
+        ret += dser::wrap_string("type", "\"") + ":" + dser::wrap_string("GetFile", "\"");
+        ret += ',';
+        ret += dser::wrap_string("path", "\"") + ":" + dser::wrap_string("/", "\"");
+        ret += "}";
+
+        return ret;
+    };
+
+    std::string msg;
+    msg.push_back(1);
+    msg.append(create_example_request_json());
+    dser::assert_perr(client.send(msg.data(), msg.size()) >= 0);
 }
 
 int main()
 {
-    yew_test_test();
+    // yew_test_test();
     // test_json_parser();
     // fs_test();
     // github_test();
+    hosting_test();
+
     return 0;
 
     // dser::signals::handle_signals();

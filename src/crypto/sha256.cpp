@@ -1,3 +1,4 @@
+#include <cassert>
 #include <dser/crypto/sha256.h>
 
 namespace dser
@@ -7,6 +8,9 @@ namespace dser
     {
         (void)data;
         (void)data_len;
+
+        assert(0 && "TODO: sha256 is not yet implemented");
+
         return 0;
     }
 

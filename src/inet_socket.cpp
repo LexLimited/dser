@@ -1,4 +1,5 @@
 #include "dser/exception.h"
+#include "dser/log.h"
 #include <asm-generic/errno.h>
 #include <cstdio>
 #include <cstring>
@@ -40,19 +41,6 @@ int inet_socket::open()
     return this->_fd = open_inet6_socket(this->_family);
 }
 
-/*
-int inet_socket::close()
-{
-    if (this->_fd)
-    {
-        int err = ::close(this->_fd);
-        this->_fd = 0;
-        return err;
-    }
-    return -1;
-}
-*/
-
 int inet_socket::family() const noexcept
 {
     return this->_family;
@@ -63,6 +51,11 @@ void inet_socket::set_family(int family)
     if (!this->_allow_change_family)
         throw dser::exception("[set_family]: Inet socket is not allowed to change family");
     this->_family = family;
+}
+
+void inet_socket::switch_family()
+{
+    this->_family = this->_family == AF_INET ? AF_INET6 : AF_INET;
 }
 
 void inet_socket::set_allow_change_family(bool value) noexcept
@@ -103,8 +96,6 @@ static int get_address_info(
             << afamily_string(ipv)
             << "."
             << std::endl;
-
-        return status;
     }
 
     return status;
@@ -112,29 +103,9 @@ static int get_address_info(
 
 int inet_socket::get_address_info(const char* node, const char* service, ::addrinfo **ai)
 {
-    static const auto afamily_string = [](int family) {
-        switch (family)
-        {
-            case AF_INET: return "IPv4";
-            case AF_INET6: return "IPv6";
-            default: return "INVALID";
-        }
-    };
-
-    ::addrinfo ai_hints;
-    bzero(&ai_hints, sizeof(ai_hints));
-    ai_hints.ai_socktype = SOCK_STREAM;
-    ai_hints.ai_family = this->_allow_change_family ? AF_UNSPEC : this->_family;
-    ai_hints.ai_flags = AI_PASSIVE;
-
-    int status = ::getaddrinfo(node, service, &ai_hints, ai);
+    int status = ::get_address_info(node, service, ai, this->_family);
     if (status)
     {
-        std::cerr << "Failed to get address info for family "
-                  << afamily_string(this->_family)
-                  << "."
-                  << std::endl;
-        
         if (!this->_allow_change_family)
         {
             std::cout << "Socket is not allowed to change the version of IP protocol."
@@ -143,24 +114,12 @@ int inet_socket::get_address_info(const char* node, const char* service, ::addri
         }
         else
         {
-            this->_family = 
+            this->switch_family();
+            status = ::get_address_info(node, service, ai, this->_family);
         }
-
-        return status;
     }
 
-    if ((*ai)->ai_family != this->_family)
-    {
-        std::cout << "Address info for requested family ("
-                  << afamily_string(this->_family)
-                  << ") was not found, but was found for "
-                  << afamily_string((*ai)->ai_family)
-                  << ". Socket family changed."
-                  << std::endl;
-        this->_family = (*ai)->ai_family;
-    }
-
-    return 0;
+    return status;
 }
 
 int inet_socket::bind(const char* port)
@@ -240,10 +199,15 @@ int inet_socket::connect(const char* node, const char* service)
 
     for (::addrinfo *_ai = ai; _ai != nullptr; _ai = _ai->ai_next)
     {
+        dser::log::debug{}.log("Connect does not assert `ai_addrlen == sizeof(::addrinfo)`");
+        /*
         if (_ai->ai_addrlen != sizeof(::addrinfo))
             continue;
+        */
 
+        dser::log::debug{}.log("Trying to connect ...");
         err = ::connect(this->_fd, _ai->ai_addr, sizeof(::addrinfo) /* _ai->ai_addrlen */);
+        dser::log::debug{}.log("Status:", err);
         if (!err)
         {
             ::freeaddrinfo(ai);
@@ -251,7 +215,7 @@ int inet_socket::connect(const char* node, const char* service)
         }
     }
 
-    return err;
+    return -1;
 }
 
 int inet_socket::accept()

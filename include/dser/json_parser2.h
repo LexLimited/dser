@@ -2,6 +2,7 @@
 #define __DSER_INCLUDE_JSON_PARSER_2__
 
 #include <string_view>
+
 namespace dser::v2
 {
 
@@ -16,7 +17,7 @@ namespace dser::v2
                 SQUARE_LEFT,
                 SQUARE_RIGHT,
 
-                // User before determined whether int or float
+                // Used before determined whether int or float
                 NUMERIC,
 
                 INTEGER,

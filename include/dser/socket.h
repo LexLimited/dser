@@ -38,7 +38,6 @@ namespace dser
             
             inline void set_fd(int fd) noexcept
             {
-                // this->close();
                 this->terminate();
                 this->_fd = fd;
             }

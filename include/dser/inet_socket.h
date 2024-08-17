@@ -9,7 +9,7 @@
 namespace dser
 {
 
-    class inet_socket : public ::dser::socket
+    class inet_socket : public socket
     {
         public:
             static inet_socket new_client(const char* port);
@@ -24,6 +24,7 @@ namespace dser
   
             int family() const noexcept;
             void set_family(int family);
+            void switch_family();
             void set_allow_change_family(bool value) noexcept;
 
             int get_address_info(const char* node, const char* service, ::addrinfo **ai);

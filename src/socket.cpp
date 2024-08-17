@@ -5,7 +5,6 @@
 #include <stdio.h>
 #include <strings.h>
 #include <netdb.h>
-#include <type_traits>
 #include <unistd.h>
 #include <sys/socket.h>
 
@@ -14,12 +13,12 @@
 namespace dser
 {
 
-    void print_sockaddr(sockaddr* sa)
+    static void print_sockaddr(sockaddr* sa)
     {
         printf("data: %.*s, family: %d\n", static_cast<int>(sizeof(sa->sa_data)), sa->sa_data, sa->sa_family);
     }
 
-    void print_addrinfo(addrinfo* ai)
+    [[maybe_unused]] static void print_addrinfo(addrinfo* ai)
     {
         printf("------------------------\n");
         printf("address info\n");

@@ -2,7 +2,6 @@
 #define __DSER_LOG_H__
 
 #include <cstdlib>
-#include <concepts>
 #include <format>
 #include <iostream>
 #include <ostream>

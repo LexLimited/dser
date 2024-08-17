@@ -114,7 +114,7 @@ namespace dser::v2
      * Reads the first character of the token and determines the
      * type of the token. The predicted type should be correct
      * if the token is valid. If the token is a string literal,
-     * performs lookahead to determine wheterh it is a value or an object key
+     * performs lookahead to determine whether it is a value or an object key
      */
     json_parser::token_type json_parser::predict_token()
     {
@@ -130,7 +130,7 @@ namespace dser::v2
             case ']': return token_type::SQUARE_RIGHT;
             case ',': return token_type::COMMA;
 
-            // TODO! add lookahead for object keys
+            // @TODO! add lookahead for object keys
             case '"': return token_type::STRING;
             case 'n': return token_type::NIL;
             case 't': return token_type::TRUE;
@@ -223,17 +223,20 @@ namespace dser::v2
         increment_pointer();
     }
 
+    inline static bool is_invalid_token_char(char c)
+    {
+        return !is_special_character(c) && !std::isspace(c);
+    }
+
     /**
      * Reads until a special character
      * or a whitespace is reached
      */
     void json_parser::read_token_invalid()
     {
-        char c = *this->_pointer;
-        while (!is_special_character(c) && !std::isspace(c))
+        while (is_invalid_token_char(*this->_pointer))
         {
             if (!increment_pointer()) break;
-            c = *this->_pointer;
         }
     }
 
